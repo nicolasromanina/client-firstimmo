@@ -10,6 +10,7 @@ import Projects from "./pages/Projects";
 import Documents from "./pages/Documents";
 import Partners from "./pages/Partners";
 import NotFound from "./pages/NotFound";
+import Header from "./components/Header";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <Header />
         <Routes>
           {/* Dashboard - Page d'accueil */}
           <Route path="/" element={<Dashboard />} />
