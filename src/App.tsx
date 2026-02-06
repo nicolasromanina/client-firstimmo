@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
+import Projects from "./pages/Projects";
+import Documents from "./pages/Documents";
+import Partners from "./pages/Partners";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +28,15 @@ const App = () => (
           
           {/* Modifier le profil - Formulaire d'édition */}
           <Route path="/profil/edit" element={<ProfileEdit />} />
+          
+          {/* Mes projets - Liste des projets */}
+          <Route path="/projets" element={<Projects />} />
+          
+          {/* Documents - Liste des documents */}
+          <Route path="/documents" element={<Documents />} />
+          
+          {/* Partenaires - Liste des partenaires */}
+          <Route path="/partenaires" element={<Partners />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
