@@ -1,7 +1,11 @@
-import { Upload, ChevronDown } from "lucide-react";
+import { Upload, ChevronDown, Crown, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import avatarRobert from "@/assets/avatar-robert.jpg";
-import { useState } from "react";
+import avatarRobert from "@/assets/avatar-robert.svg";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useClientProfile, useUpdateClientProfile, usePromoteurStatus } from "@/hooks/useApi";
+import { toast } from "sonner";
 
 /**
  * ProfileEdit Page (Modifier mon profil)
@@ -10,20 +14,43 @@ import { useState } from "react";
  */
 
 const ProfileEdit = () => {
+  const { user, refreshProfile } = useAuth();
+  const { data: profile } = useClientProfile();
+  const updateProfile = useUpdateClientProfile();
+  const { data: promoteurStatus } = usePromoteurStatus();
+
   // État du formulaire
   const [formData, setFormData] = useState({
-    nom: "Robert",
-    prenom: "Jr",
-    email: "robert.Jr@gr.com",
-    telephone: "+33 00 000 00",
+    nom: "",
+    prenom: "",
+    email: "",
+    telephone: "",
     residence: "Paris, France",
-    adresse: "36 Lorem , Rue 123 IV avenue",
+    adresse: "",
     objectif: [] as string[],
     modePaiement: "comptant",
     dejaInvesti: "oui",
     aversionRisque: "",
     accompagnements: [] as string[],
   });
+
+  // Pré-remplir le formulaire avec les données utilisateur et profil
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      nom: user?.lastName || prev.nom,
+      prenom: user?.firstName || prev.prenom,
+      email: user?.email || prev.email,
+      telephone: user?.phone || profile?.telephone || prev.telephone,
+      adresse: profile?.adresse || prev.adresse,
+      residence: profile?.residence || prev.residence,
+      objectif: profile?.objectif || prev.objectif,
+      modePaiement: profile?.modePaiement || prev.modePaiement,
+      dejaInvesti: profile?.dejaInvesti === true ? 'oui' : profile?.dejaInvesti === false ? 'non' : (profile?.dejaInvesti as string) || prev.dejaInvesti,
+      aversionRisque: profile?.aversionRisque || prev.aversionRisque,
+      accompagnements: profile?.accompagnements || prev.accompagnements,
+    }));
+  }, [user, profile]);
 
   // Handler pour les checkboxes
   const handleCheckbox = (field: "objectif" | "accompagnements", value: string) => {
@@ -35,6 +62,28 @@ const ProfileEdit = () => {
     }));
   };
 
+  // Handler pour soumettre le formulaire
+  const handleSubmit = async () => {
+    try {
+      await updateProfile.mutateAsync({
+        firstName: formData.prenom,
+        lastName: formData.nom,
+        phone: formData.telephone,
+        adresse: formData.adresse,
+        residence: formData.residence,
+        objectif: formData.objectif,
+        modePaiement: formData.modePaiement,
+        dejaInvesti: formData.dejaInvesti,
+        aversionRisque: formData.aversionRisque,
+        accompagnements: formData.accompagnements,
+      });
+      refreshProfile();
+      toast.success('Profil mis à jour avec succès');
+    } catch {
+      toast.error('Erreur lors de la mise à jour du profil');
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl">
@@ -43,7 +92,7 @@ const ProfileEdit = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
               <img
-                src={avatarRobert}
+                src={user?.avatar || avatarRobert}
                 alt="Photo de profil"
                 className="w-16 h-16 rounded-full object-cover"
               />
@@ -76,7 +125,7 @@ const ProfileEdit = () => {
                 type="text"
                 value={formData.nom}
                 onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
@@ -89,7 +138,7 @@ const ProfileEdit = () => {
                 type="text"
                 value={formData.prenom}
                 onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
@@ -102,7 +151,7 @@ const ProfileEdit = () => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
@@ -115,7 +164,7 @@ const ProfileEdit = () => {
                 type="tel"
                 value={formData.telephone}
                 onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
 
@@ -150,7 +199,7 @@ const ProfileEdit = () => {
                 type="text"
                 value={formData.adresse}
                 onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
           </div>
@@ -174,7 +223,7 @@ const ProfileEdit = () => {
                     type="checkbox"
                     checked={formData.objectif.includes(option)}
                     onChange={() => handleCheckbox("objectif", option)}
-                    className="w-5 h-5 rounded border-slate-300 text-sky-500 focus:ring-sky-500"
+                    className="w-4 h-4 rounded bg-[#F5FAFF] border-slate-300 text-sky-500 focus:ring-sky-500"
                   />
                   <span className="text-sm text-slate-700">{option}</span>
                 </label>
@@ -198,7 +247,7 @@ const ProfileEdit = () => {
                       value={option.toLowerCase()}
                       checked={formData.modePaiement === option.toLowerCase()}
                       onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value })}
-                      className="w-5 h-5 border-slate-300 text-sky-500 focus:ring-sky-500"
+                      className="w-4 h-4 border-slate-300 text-sky-500 focus:ring-sky-500"
                     />
                     <span className="text-sm text-slate-700">{option}</span>
                   </label>
@@ -220,7 +269,7 @@ const ProfileEdit = () => {
                       value={option.toLowerCase()}
                       checked={formData.dejaInvesti === option.toLowerCase()}
                       onChange={(e) => setFormData({ ...formData, dejaInvesti: e.target.value })}
-                      className="w-5 h-5 border-slate-300 text-sky-500 focus:ring-sky-500"
+                      className="w-4 h-4 border-slate-300 text-sky-500 focus:ring-sky-500"
                     />
                     <span className="text-sm text-slate-700">{option}</span>
                   </label>
@@ -250,7 +299,7 @@ const ProfileEdit = () => {
                         aversionRisque: formData.aversionRisque === option ? "" : option,
                       })
                     }
-                    className="w-5 h-5 rounded border-slate-300 text-sky-500 focus:ring-sky-500"
+                    className="w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500"
                   />
                   <span className="text-sm text-slate-700">{option}</span>
                 </label>
@@ -276,7 +325,7 @@ const ProfileEdit = () => {
                     type="checkbox"
                     checked={formData.accompagnements.includes(option)}
                     onChange={() => handleCheckbox("accompagnements", option)}
-                    className="w-5 h-5 rounded border-slate-300 text-sky-500 focus:ring-sky-500"
+                    className="w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-500"
                   />
                   <span className="text-sm text-slate-700">{option}</span>
                 </label>
@@ -285,10 +334,41 @@ const ProfileEdit = () => {
           </div>
         </div>
 
+        {/* Bannière Devenir Promoteur */}
+        {!promoteurStatus?.isPromoteur && (
+          <div className="bg-gradient-to-r from-coral-500 to-amber-500 rounded-2xl p-6 shadow-sm mb-6 text-white">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                  <Crown className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold mb-1">Vous souhaitez vendre vos projets ?</h3>
+                  <p className="text-sm text-coral-100">
+                    Devenez promoteur et accédez à un espace dédié pour publier vos projets, gérer vos leads et développer votre activité.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/devenir-promoteur"
+                className="inline-flex items-center gap-2 bg-white text-coral-600 font-semibold px-6 py-3 rounded-full hover:bg-coral-50 transition-colors text-sm shrink-0"
+              >
+                <Crown className="w-4 h-4" />
+                Devenir Promoteur
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Bouton Mettre à jour */}
         <div className="text-center">
-          <button className="bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-8 rounded-full transition-colors">
-            Mettre à jours mon profil
+          <button
+            onClick={handleSubmit}
+            disabled={updateProfile.isPending}
+            className="bg-[#007BFF] hover:bg-[#007BFF] text-white font-medium py-3 px-8 rounded-full transition-colors disabled:opacity-50"
+          >
+            {updateProfile.isPending ? 'Mise à jour...' : 'Mettre à jours mon profil'}
           </button>
         </div>
       </div>

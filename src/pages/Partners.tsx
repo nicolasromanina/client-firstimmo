@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { MapPin, Phone, MoreVertical } from "lucide-react";
+import { MapPin, Phone, MoreVertical, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import partnerMarie1 from "@/assets/partner-marie-1.jpg";
 import partnerMarie2 from "@/assets/partner-marie-2.jpg";
 import partnerMarie3 from "@/assets/partner-marie-3.jpg";
-
+import localisationIcon from "@/assets/localisation-icon.svg";
+import callIcon from "@/assets/call.svg";
+import { usePartners } from "@/hooks/useApi";
 /**
  * Partners Page (Mes partenaires)
  * Liste des partenaires professionnels avec filtres
  */
 
 interface Partner {
-  id: number;
+  id: string | number;
   avatar: string;
   name: string;
   role: string;
@@ -23,7 +25,17 @@ interface Partner {
   phone: string;
 }
 
-const partners: Partner[] = [
+const fallbackAvatars = [partnerMarie1, partnerMarie2, partnerMarie3];
+
+const roleColorMap: Record<string, { roleColor: string; borderColor: string }> = {
+  'conseille juridique': { roleColor: 'text-red-500', borderColor: 'border-red-400' },
+  'avocat': { roleColor: 'text-green-500', borderColor: 'border-sky-400' },
+  'notaire': { roleColor: 'text-slate-500', borderColor: 'border-amber-400' },
+  'architecte': { roleColor: 'text-sky-500', borderColor: 'border-sky-400' },
+  'société btp': { roleColor: 'text-amber-500', borderColor: 'border-amber-400' },
+};
+
+const fallbackPartners: Partner[] = [
   {
     id: 1,
     avatar: partnerMarie1,
@@ -67,14 +79,41 @@ const partners: Partner[] = [
 
 type FilterCategory = "notaire" | "avocats" | "btp" | "architectes";
 
+const filterTypeMap: Record<FilterCategory, string> = {
+  notaire: 'notaire',
+  avocats: 'avocat',
+  btp: 'btp',
+  architectes: 'architecte',
+};
+
 const Partners = () => {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("notaire");
+  const { data: apiPartners, isLoading } = usePartners({ type: filterTypeMap[activeFilter] });
+
+  const partners: Partner[] = apiPartners && apiPartners.length > 0
+    ? apiPartners.map((p: any, index: number) => {
+        const roleLower = (p.role || p.type || '').toLowerCase();
+        const colors = roleColorMap[roleLower] || { roleColor: 'text-slate-500', borderColor: 'border-slate-400' };
+        return {
+          id: p._id || p.id || index + 1,
+          avatar: p.avatar || p.image || fallbackAvatars[index % fallbackAvatars.length],
+          name: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Partenaire',
+          role: p.role || p.type || 'Partenaire',
+          roleColor: colors.roleColor,
+          borderColor: colors.borderColor,
+          description: p.description || p.bio || 'Professionnel de l\'immobilier',
+          specialty: p.specialty || p.specialite || 'Spécialiste en investissement immobilier',
+          location: p.location || p.city || 'Paris',
+          phone: p.phone || p.telephone || '+33 00 000 00',
+        };
+      })
+    : fallbackPartners;
 
   const filters: { key: FilterCategory; label: string; color: string; activeColor: string }[] = [
-    { key: "notaire", label: "Notaire", color: "border-slate-300 text-slate-700", activeColor: "bg-slate-900 text-white border-slate-900" },
-    { key: "avocats", label: "Avocats", color: "border-red-500 text-red-500", activeColor: "bg-red-500 text-white border-red-500" },
-    { key: "btp", label: "Société BTP", color: "border-red-500 text-red-500", activeColor: "bg-red-500 text-white border-red-500" },
-    { key: "architectes", label: "Architectes", color: "border-green-500 text-green-500", activeColor: "bg-green-500 text-white border-green-500" },
+    { key: "notaire", label: "Notaire", color: "border-slate-300 text-slate-700", activeColor: "bg-[#DBD9D9] text-[#1E1E1E] border-slate-900" },
+    { key: "avocats", label: "Avocats", color: "border-red-500 text-red-500", activeColor: "bg-[#DEECFE] text-[#007BFF] border-red-500" },
+    { key: "btp", label: "Société BTP", color: "border-red-500 text-red-500", activeColor: "bg-[#FFF8E5] text-[#FFB800] border-red-500" },
+    { key: "architectes", label: "Architectes", color: "border-green-500 text-green-500", activeColor: "bg-[#1FAF381C] text-[#1FAF38] border-green-500" },
   ];
 
   return (
@@ -104,7 +143,11 @@ const Partners = () => {
 
         {/* Liste des partenaires */}
         <div className="space-y-4">
-          {partners.map((partner) => (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+            </div>
+          ) : partners.map((partner) => (
             <div
               key={partner.id}
               className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100"
@@ -149,13 +192,13 @@ const Partners = () => {
 
                     {/* Localisation */}
                     <div className="flex items-center justify-center sm:justify-start gap-1 text-slate-500">
-                      <MapPin size={14} />
+                      <img src={localisationIcon} alt="Localisation" className="w-4 h-4" />
                       <span className="text-sm">{partner.location}</span>
                     </div>
 
                     {/* Téléphone */}
                     <div className="flex items-center justify-center sm:justify-start gap-1 text-slate-500">
-                      <Phone size={14} />
+                      <img src={callIcon} alt="Téléphone" className="w-4 h-4" />
                       <span className="text-sm">{partner.phone}</span>
                     </div>
                   </div>

@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { FileText, Image, Download, Eye, ChevronDown } from "lucide-react";
+import { FileText, Image, Download, Eye, ChevronDown, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import avatarJoseph from "@/assets/avatar-joseph.jpg";
 import avatarPatrick from "@/assets/avatar-patrick.jpg";
-
+import documentIcon from "@/assets/doc-icon.svg";
+import pdfIcon from "@/assets/pdf-icon.svg";
+import imageIcon from "@/assets/image-icon.svg";
+import { useClientDocuments } from "@/hooks/useApi";
 /**
  * Documents Page
  * Liste des documents avec filtres par catégorie
  */
 
 interface Document {
-  id: number;
+  id: number | string;
   type: "pdf" | "image";
   title: string;
   author: {
@@ -22,7 +25,7 @@ interface Document {
   value: string;
 }
 
-const documents: Document[] = [
+const fallbackDocuments: Document[] = [
   {
     id: 1,
     type: "pdf",
@@ -67,11 +70,29 @@ const Documents = () => {
   const [sortBy, setSortBy] = useState("Promoteur");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("plans");
+  const { data: apiDocs, isLoading } = useClientDocuments({ category: activeFilter });
+
+  const documents: Document[] = apiDocs && apiDocs.length > 0
+    ? apiDocs.map((doc: any) => ({
+        id: doc._id || doc.id,
+        type: doc.type === 'image' ? 'image' as const : 'pdf' as const,
+        title: doc.name || doc.title || 'Document',
+        author: {
+          name: doc.author?.name || doc.uploadedBy?.name || 'Auteur',
+          avatar: doc.author?.avatar || avatarJoseph,
+        },
+        date: doc.createdAt
+          ? new Date(doc.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+          : 'Date inconnue',
+        project: doc.project?.name || doc.projectName || 'Projet',
+        value: doc.value || 'N/A',
+      }))
+    : fallbackDocuments;
 
   const filters: { key: FilterCategory; label: string; color: string; activeColor: string }[] = [
-    { key: "plans", label: "Plans", color: "border-sky-500 text-sky-500", activeColor: "bg-sky-500 text-white" },
-    { key: "juridique", label: "Juridique", color: "border-amber-500 text-amber-500", activeColor: "bg-amber-500 text-white" },
-    { key: "echanges", label: "Échanges", color: "border-green-500 text-green-500", activeColor: "bg-green-500 text-white" },
+    { key: "plans", label: "Plans", color: "border-sky-500 text-sky-500", activeColor: "bg-[#DEECFE] text-[#007BFF]" },
+    { key: "juridique", label: "Juridique", color: "border-amber-500 text-amber-500", activeColor: "bg-[#FFF8E5] text-[#FFB800]" },
+    { key: "echanges", label: "Échanges", color: "border-green-500 text-green-500", activeColor: "bg-[#1FAF381C] text-[#1FAF38]" },
   ];
 
   return (
@@ -127,7 +148,11 @@ const Documents = () => {
 
         {/* Liste des documents */}
         <div className="space-y-4">
-          {documents.map((doc) => (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+            </div>
+          ) : documents.map((doc) => (
             <div
               key={doc.id}
               className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100"
@@ -141,9 +166,9 @@ const Documents = () => {
                     }`}
                   >
                     {doc.type === "pdf" ? (
-                      <FileText size={16} className="text-red-500" />
+                      <img src={pdfIcon} alt="PDF" className="w-4 h-4" />
                     ) : (
-                      <Image size={16} className="text-sky-500" />
+                      <img src={imageIcon} alt="Image" className="w-4 h-4" />
                     )}
                   </div>
                   <h3 className="font-semibold text-slate-900">{doc.title}</h3>

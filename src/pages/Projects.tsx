@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { MapPin, Eye, ChevronDown } from "lucide-react";
+import { MapPin, Eye, ChevronDown, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import projectImmeuble from "@/assets/project-immeuble.jpg";
-import projectResidence from "@/assets/project-residence.jpg";
-
+import projectImmeuble from "@/assets/projet-1.png";
+import projectResidence from "@/assets/projet-2.png";
+import projet3 from "@/assets/projet-3.png";
+import localisatisationIcon from "@/assets/localisation-icon.svg";
+import { usePublicProjects } from "@/hooks/useApi";
 /**
  * Projects Page (Mes projets)
  * Liste des projets immobiliers avec tri et filtres
  */
 
 interface Project {
-  id: number;
+  id: string | number;
   image: string;
   title: string;
   description: string;
@@ -19,7 +21,9 @@ interface Project {
   visitBadge: string;
 }
 
-const projects: Project[] = [
+const fallbackImages = [projectImmeuble, projectResidence, projet3];
+
+const fallbackProjects: Project[] = [
   {
     id: 1,
     image: projectImmeuble,
@@ -42,7 +46,7 @@ const projects: Project[] = [
   },
   {
     id: 3,
-    image: projectImmeuble,
+    image: projet3,
     title: "Immeuble Libero",
     description:
       "Nunc vulputate libero et velit interdum, ac aliquet odio mattis. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos",
@@ -55,6 +59,20 @@ const projects: Project[] = [
 const Projects = () => {
   const [sortBy, setSortBy] = useState("Date");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const { data: apiProjects, isLoading } = usePublicProjects({ page, limit: 10 });
+
+  const projects: Project[] = apiProjects && apiProjects.length > 0
+    ? apiProjects.map((p: any, index: number) => ({
+        id: p._id || p.id || index + 1,
+        image: p.images?.[0] || p.image || fallbackImages[index % fallbackImages.length],
+        title: p.name || p.title || 'Projet',
+        description: p.description || 'Description du projet immobilier',
+        location: p.location || p.city || 'Localisation',
+        priceRange: p.priceRange || (p.price ? `${p.price.toLocaleString('fr-FR')} €` : 'Prix sur demande'),
+        visitBadge: 'Visité il y a une semaine',
+      }))
+    : fallbackProjects;
 
   return (
     <DashboardLayout>
@@ -94,7 +112,11 @@ const Projects = () => {
 
         {/* Liste des projets */}
         <div className="space-y-4">
-          {projects.map((project) => (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+            </div>
+          ) : projects.map((project) => (
             <div
               key={project.id}
               className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100"
@@ -127,7 +149,7 @@ const Projects = () => {
                   {/* Localisation et badge */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-4">
                     <div className="flex items-center gap-1 text-slate-500">
-                      <MapPin size={14} />
+                      <img src={localisatisationIcon} alt="Localisation" className="w-4 h-4" />
                       <span className="text-xs">{project.location}</span>
                     </div>
                     <span className="inline-flex self-start px-3 py-1 bg-slate-900 text-white text-xs rounded-full">
@@ -150,7 +172,10 @@ const Projects = () => {
 
         {/* Bouton Afficher plus */}
         <div className="text-center pt-4">
-          <button className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full font-medium transition-colors">
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full font-medium transition-colors"
+          >
             Afficher plus de projet
             <ChevronDown size={18} />
           </button>

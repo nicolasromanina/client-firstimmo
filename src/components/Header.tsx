@@ -81,25 +81,25 @@ const Header = ({ title, showMobileSidebar = true }: HeaderProps) => {
             {/* Left: hamburger (mobile) + logo (desktop) */}
             <div className="flex items-center gap-3">
               {showMobileSidebar ? (
-                <div className="md:hidden">
+                <div className="lg:hidden">
                   <MobileSidebar inline />
                 </div>
               ) : null}
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <img src={Logo} alt="Logo" className="h-10 w-auto object-contain max-w-[160px]" />
               </div>
             </div>
 
             {/* Center: mobile logo + desktop navigation */}
             <div className="flex items-center justify-center">
-              <div className="md:hidden">
+              <div className="lg:hidden">
                 <img
                   src={Logo}
                   alt="Logo"
                   className="h-9 w-auto object-contain max-w-[140px]"
                 />
               </div>
-              <div className="hidden md:flex items-center justify-center">
+              <div className="hidden lg:flex items-center justify-center">
                 <Navigation />
               </div>
             </div>
@@ -111,7 +111,7 @@ const Header = ({ title, showMobileSidebar = true }: HeaderProps) => {
           </div>
 
           {/* Mobile quick nav: horizontal, scrollable small pills */}
-          <div className="mt-3 md:hidden">
+          <div className="mt-3 lg:hidden">
             <div className="flex items-center justify-center gap-3 overflow-x-auto px-2 py-1">
               <Link to="/" className="flex-shrink-0 px-3 py-2 rounded-full bg-white/10 text-white text-sm font-medium hover:bg-white/20">Accueil</Link>
               <Link to="/annuaires" className="flex-shrink-0 px-3 py-2 rounded-full bg-white/10 text-white text-sm font-medium hover:bg-white/20">Annuaires</Link>
@@ -132,6 +132,7 @@ const Header = ({ title, showMobileSidebar = true }: HeaderProps) => {
                 if (path.startsWith("/projets")) return "Mes Projets";
                 if (path.startsWith("/documents")) return "Mes documents";
                 if (path.startsWith("/partenaires")) return "Partenaires";
+                if (path.startsWith("/parametres")) return "Paramètres";
 
                 return "Bonjour et Bienvenue";
               })()}

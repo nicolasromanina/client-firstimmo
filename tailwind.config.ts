@@ -14,6 +14,20 @@ export default {
     },
     extend: {
       colors: {
+        // Couleur corail personnalisée pour FIRST IMMO
+        coral: {
+          50: "#FEF2F0",
+          100: "#FDE4DF",
+          200: "#FBC8BF",
+          300: "#F9AB9F",
+          400: "#F68F80",
+          500: "#F25C3B",
+          600: "#D04A2F",
+          700: "#A83B25",
+          800: "#802C1C",
+          900: "#581E13",
+          950: "#30100A",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -1,5 +1,11 @@
+import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { LayoutGrid, Users, Image, FileText, RefreshCw, Settings, User, FolderKanban } from "lucide-react";
+import userIcon from "@/assets/user-icon.svg";
+import projectIcon from "@/assets/project-icon.svg";
+import documentIcon from "@/assets/document-icon.svg";
+import partnerIcon from "@/assets/partenaire-icon.svg";
+import settingsIcon from "@/assets/setting-icon.svg";
 
 /**
  * Sidebar de navigation principale
@@ -29,7 +35,11 @@ const NavItem = ({ icon, label, to, isActive }: NavItemProps) => {
       `}
     >
       <span className="w-5 h-5 flex items-center justify-center">
-        {icon}
+        {React.isValidElement(icon)
+          ? React.cloneElement(icon as React.ReactElement, {
+              className: `${(icon as any).props.className ?? ""} ${isActive ? (typeof (icon as any).type === "string" && (icon as any).type === "img" ? "filter invert brightness-200" : "text-white") : ""}`.trim(),
+            })
+          : icon}
       </span>
       <span>{label}</span>
     </Link>
@@ -43,10 +53,10 @@ const Sidebar = () => {
   // Items de navigation principaux
   const mainNavItems = [
     { icon: <LayoutGrid className="w-5 h-5" />, label: "Tableau de bord", to: "/" },
-    { icon: <User className="w-5 h-5" />, label: "Mon profil", to: "/profil" },
-    { icon: <FolderKanban className="w-5 h-5" />, label: "Projets", to: "/projets" },
-    { icon: <FileText className="w-5 h-5" />, label: "Documents", to: "/documents" },
-    { icon: <Users className="w-5 h-5" />, label: "Partenaires", to: "/partenaires" },
+    { icon: <img src={userIcon} alt="Mon profil" className="w-5 h-5" />, label: "Mon profil", to: "/profil" },
+    { icon: <img src={projectIcon} alt="Projets" className="w-5 h-5" />, label: "Projets", to: "/projets" },
+    { icon: <img src={documentIcon} alt="Documents" className="w-5 h-5" />, label: "Documents", to: "/documents" },
+    { icon: <img src={partnerIcon} alt="Partenaires" className="w-5 h-5" />, label: "Partenaires", to: "/partenaires" },
   ];
 
     const isActive = (path: string) => {
@@ -84,7 +94,7 @@ const Sidebar = () => {
       {/* Séparateur + Paramètres */}
       <div className="mt-48">
         <NavItem
-          icon={<Settings className="w-5 h-5" />}
+          icon={<img src={settingsIcon} alt="Paramètres" className="w-5 h-5" />}
           label="Paramètres"
           to="/parametres"
           isActive={isActive("/parametres")}

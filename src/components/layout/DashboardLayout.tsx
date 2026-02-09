@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import Sidebar from "../Sidebar";
-import MobileSidebar from "../MobileSidebar";
 import Footer from "../Footer";
 
 /**
@@ -18,8 +17,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header moved to App.tsx so it's rendered for all routes */}
 
-      {/* Mobile sidebar button + overlay (fixed) */}
-      <MobileSidebar />
+      {/* Mobile sidebar button is rendered in the Header (inline) to avoid duplicate buttons */}
 
       <div className="flex flex-1">
         {/* Desktop Sidebar */}

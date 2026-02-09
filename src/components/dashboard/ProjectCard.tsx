@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react";
+import localisatisationIcon from "@/assets/localisation-icon.svg";
 
 /**
  * ProjectCard Component
@@ -46,7 +47,7 @@ const ProjectCard = ({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 gap-2">
           {/* Localisation */}
           <div className="flex items-center gap-1 text-slate-500">
-            <MapPin size={14} />
+            <img src={localisatisationIcon} alt="Localisation" className="w-3 h-3" />
             <span className="text-xs">{location}</span>
           </div>
 
