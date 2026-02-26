@@ -43,7 +43,7 @@ const UserDropdown = () => {
         className="w-48 bg-gray-900 border border-gray-700 text-white rounded-xl shadow-xl"
         sideOffset={8}
       >
-        <DropdownMenuItem onClick={() => navigate('/profil')} className="flex items-center gap-3 px-4 py-3 text-sm cursor-pointer hover:bg-white/10 focus:bg-white/10 rounded-lg mx-1 mt-1">
+        <DropdownMenuItem onClick={() => navigate('/profile')} className="flex items-center gap-3 px-4 py-3 text-sm cursor-pointer hover:bg-white/10 focus:bg-white/10 rounded-lg mx-1 mt-1">
           <User className="w-4 h-4 text-gray-400" />
           <span>Profil</span>
         </DropdownMenuItem>

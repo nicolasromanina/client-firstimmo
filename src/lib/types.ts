@@ -59,12 +59,62 @@ export interface Project {
     min?: number;
     max?: number;
   };
+  priceFrom?: number;
+  currency?: string;
+  projectType?: 'villa' | 'immeuble';
+  area?: string;
+  city?: string;
+  country?: string;
+  media?: {
+    coverImage?: string;
+    renderings?: Array<string | { url: string; mimeType?: string; sizeBytes?: number; uploadedAt?: string }>;
+    photos?: Array<string | { url: string; mimeType?: string; sizeBytes?: number; uploadedAt?: string }>;
+    videos?: Array<string | { url: string; mimeType?: string; sizeBytes?: number; uploadedAt?: string }>;
+    floorPlans?: Array<string | { url: string; mimeType?: string; sizeBytes?: number; uploadedAt?: string }>;
+  };
+  images?: string[];
+  price?: number;
   status?: string;
   trustScore?: number;
   promoteurId?: string;
   promoteurName?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// ===== Comparison =====
+export interface ComparisonProject {
+  _id: string;
+  title: string;
+  priceFrom?: number;
+  currency?: string;
+  trustScore?: number;
+  media?: { coverImage?: string };
+  timeline?: { deliveryDate?: string };
+}
+export interface Comparison {
+  _id: string;
+  user: string;
+  projects: string[] | ComparisonProject[];
+  metrics?: {
+    trustScores: number[];
+    prices: number[];
+    deliveryDates: string[];
+    updateFrequencies: number[];
+    documentCounts: number[];
+    leadResponseTimes: number[];
+  };
+  notes?: string;
+  insights?: {
+    bestTrustScore: { index: number; value: number };
+    lowestPrice: { index: number; value: number };
+    earliestDelivery: { index: number; value: Date };
+    mostFrequentUpdates: { index: number; value: number };
+    mostDocuments: { index: number; value: number };
+    fastestResponse: { index: number; value: number };
+  };
+  winner?: { winnerIndex: number; winsCount: number; projectId: string };
+  createdAt?: string;
 }
 
 // ===== Favorites =====
@@ -90,6 +140,37 @@ export interface ClientDocument {
   date?: string;
   value?: string;
   createdAt?: string;
+}
+
+// ===== Alerts =====
+export interface Alert {
+  _id: string;
+  user: string;
+  type: 'new-project' | 'update-published' | 'status-change' | 'price-change' | 'similar-project' | 'deadline-approaching' | 'favorite-update' | 'promoteur-verified';
+  project?: string;
+  promoteur?: string;
+  criteria: {
+    countries?: string[];
+    cities?: string[];
+    projectTypes?: ('villa' | 'immeuble')[];
+    budgetMin?: number;
+    budgetMax?: number;
+    minTrustScore?: number;
+    verifiedOnly?: boolean;
+  };
+  isActive: boolean;
+  frequency: 'instant' | 'daily' | 'weekly';
+  channels: ('email' | 'whatsapp' | 'sms' | 'push')[];
+  title: string;
+  message: string;
+  link?: string;
+  sentAt?: string;
+  readAt?: string;
+  isRead: boolean;
+  triggerCount: number;
+  lastTriggeredAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ===== Notifications =====

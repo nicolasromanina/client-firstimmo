@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
-import { LayoutGrid, Users, Image, FileText, RefreshCw, Settings, User, FolderKanban } from "lucide-react";
+import { LayoutGrid, Bell, BarChart3, MessageCircle, CalendarDays, Star } from "lucide-react";
 import userIcon from "@/assets/user-icon.svg";
 import projectIcon from "@/assets/project-icon.svg";
 import documentIcon from "@/assets/document-icon.svg";
@@ -53,15 +53,21 @@ const Sidebar = () => {
   // Items de navigation principaux
   const mainNavItems = [
     { icon: <LayoutGrid className="w-5 h-5" />, label: "Tableau de bord", to: "/" },
-    { icon: <img src={userIcon} alt="Mon profil" className="w-5 h-5" />, label: "Mon profil", to: "/profil" },
+    { icon: <img src={userIcon} alt="Mon profil" className="w-5 h-5" />, label: "Mon profil", to: "/profile" },
     { icon: <img src={projectIcon} alt="Projets" className="w-5 h-5" />, label: "Projets", to: "/projets" },
+    { icon: <BarChart3 className="w-5 h-5" />, label: "Marché", to: "/marche" },
+    { icon: <BarChart3 className="w-5 h-5" />, label: "Comparer", to: "/comparer" },
+    { icon: <MessageCircle className="w-5 h-5" />, label: "Messages", to: "/messages" },
+    { icon: <CalendarDays className="w-5 h-5" />, label: "Rendez-vous", to: "/rendez-vous" },
+    { icon: <Star className="w-5 h-5" />, label: "Mes avis", to: "/avis" },
+    { icon: <Bell className="w-5 h-5" />, label: "Alertes", to: "/alertes" },
     { icon: <img src={documentIcon} alt="Documents" className="w-5 h-5" />, label: "Documents", to: "/documents" },
     { icon: <img src={partnerIcon} alt="Partenaires" className="w-5 h-5" />, label: "Partenaires", to: "/partenaires" },
   ];
 
     const isActive = (path: string) => {
-    if (path === "/profil") {
-      return location.pathname === "/profil" || location.pathname === "/profil/edit";
+    if (path === "/profile") {
+      return location.pathname === "/profile" || location.pathname === "/profil/edit";
     }
     return location.pathname === path;
   };

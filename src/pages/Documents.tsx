@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { FileText, Image, Download, Eye, ChevronDown, Loader2 } from "lucide-react";
+import { Download, Eye, ChevronDown, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import avatarJoseph from "@/assets/avatar-joseph.jpg";
-import avatarPatrick from "@/assets/avatar-patrick.jpg";
-import documentIcon from "@/assets/doc-icon.svg";
 import pdfIcon from "@/assets/pdf-icon.svg";
 import imageIcon from "@/assets/image-icon.svg";
 import { useClientDocuments } from "@/hooks/useApi";
+import type { ClientDocument } from "@/lib/types";
 /**
  * Documents Page
  * Liste des documents avec filtres par catégorie
@@ -18,53 +16,20 @@ interface Document {
   title: string;
   author: {
     name: string;
-    avatar: string;
   };
+  url?: string;
   date: string;
   project: string;
   value: string;
 }
 
-const fallbackDocuments: Document[] = [
-  {
-    id: 1,
-    type: "pdf",
-    title: "Document Villa Lorem Horizon",
-    author: { name: "Joseph.H", avatar: avatarJoseph },
-    date: "2 Juin 2025",
-    project: "Résidence Lorem",
-    value: "80-100k",
-  },
-  {
-    id: 2,
-    type: "image",
-    title: "Plan Résidence B",
-    author: { name: "Joseph.H", avatar: avatarJoseph },
-    date: "7 Mars 2025",
-    project: "Résidence B",
-    value: "70-200k",
-  },
-  {
-    id: 3,
-    type: "pdf",
-    title: "Document Résidence B",
-    author: { name: "Marc.H", avatar: avatarPatrick },
-    date: "6 Janvier 2025",
-    project: "Résidence B",
-    value: "70-200k",
-  },
-  {
-    id: 4,
-    type: "pdf",
-    title: "Document Immeuble B",
-    author: { name: "Patrick.D", avatar: avatarPatrick },
-    date: "2 Juin 2025",
-    project: "Immeuble B",
-    value: "80-400k",
-  },
-];
-
 type FilterCategory = "plans" | "juridique" | "echanges";
+type ClientDocumentView = ClientDocument & {
+  id?: string;
+  title?: string;
+  author?: { name?: string };
+  project?: { name?: string };
+};
 
 const Documents = () => {
   const [sortBy, setSortBy] = useState("Promoteur");
@@ -72,22 +37,24 @@ const Documents = () => {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("plans");
   const { data: apiDocs, isLoading } = useClientDocuments({ category: activeFilter });
 
-  const documents: Document[] = apiDocs && apiDocs.length > 0
-    ? apiDocs.map((doc: any) => ({
-        id: doc._id || doc.id,
-        type: doc.type === 'image' ? 'image' as const : 'pdf' as const,
-        title: doc.name || doc.title || 'Document',
-        author: {
-          name: doc.author?.name || doc.uploadedBy?.name || 'Auteur',
-          avatar: doc.author?.avatar || avatarJoseph,
-        },
-        date: doc.createdAt
-          ? new Date(doc.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-          : 'Date inconnue',
-        project: doc.project?.name || doc.projectName || 'Projet',
-        value: doc.value || 'N/A',
-      }))
-    : fallbackDocuments;
+  const documents: Document[] = (apiDocs || []).map((doc: ClientDocumentView) => ({
+    id: doc._id || doc.id,
+    type: doc.type === "image" ? ("image" as const) : ("pdf" as const),
+    title: doc.name || doc.title || "Document",
+    author: {
+      name: doc.promoteurName || doc.author?.name || "Promoteur",
+    },
+    url: doc.url,
+    date: doc.createdAt
+      ? new Date(doc.createdAt).toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "Date inconnue",
+    project: doc.project?.name || doc.projectName || "Projet",
+    value: doc.value || "N/A",
+  }));
 
   const filters: { key: FilterCategory; label: string; color: string; activeColor: string }[] = [
     { key: "plans", label: "Plans", color: "border-sky-500 text-sky-500", activeColor: "bg-[#DEECFE] text-[#007BFF]" },
@@ -152,72 +119,84 @@ const Documents = () => {
             <div className="flex justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
             </div>
-          ) : documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100"
-            >
-              <div className="flex flex-col gap-4">
-                {/* Titre avec icône */}
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-7 h-7 rounded flex items-center justify-center ${
-                      doc.type === "pdf" ? "bg-red-100" : "bg-sky-100"
-                    }`}
-                  >
-                    {doc.type === "pdf" ? (
-                      <img src={pdfIcon} alt="PDF" className="w-4 h-4" />
-                    ) : (
-                      <img src={imageIcon} alt="Image" className="w-4 h-4" />
-                    )}
-                  </div>
-                  <h3 className="font-semibold text-slate-900">{doc.title}</h3>
-                </div>
-
-                {/* Infos et actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  {/* Auteur */}
+          ) : documents.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center border border-slate-100 text-slate-500">
+              Aucun document disponible pour le moment.
+            </div>
+          ) : (
+            documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100"
+              >
+                <div className="flex flex-col gap-4">
+                  {/* Titre avec icône */}
                   <div className="flex items-center gap-3">
-                    <img
-                      src={doc.author.avatar}
-                      alt={doc.author.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
-                        {doc.author.name}
-                      </p>
-                      <p className="text-xs text-sky-500">{doc.date}</p>
+                    <div
+                      className={`w-7 h-7 rounded flex items-center justify-center ${
+                        doc.type === "pdf" ? "bg-red-100" : "bg-sky-100"
+                      }`}
+                    >
+                      {doc.type === "pdf" ? (
+                        <img src={pdfIcon} alt="PDF" className="w-4 h-4" />
+                      ) : (
+                        <img src={imageIcon} alt="Image" className="w-4 h-4" />
+                      )}
                     </div>
+                    <h3 className="font-semibold text-slate-900">{doc.title}</h3>
                   </div>
 
-                  {/* Métadonnées */}
-                  <div className="flex flex-wrap items-center gap-4 sm:gap-8 text-sm text-slate-500 sm:ml-4">
-                    <div>
-                      <span className="text-slate-400">Projet :</span>{" "}
-                      <span className="text-slate-700">{doc.project}</span>
+                  {/* Infos et actions */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    {/* Auteur */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-semibold">
+                        {doc.author.name?.charAt(0)?.toUpperCase() || "P"}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">
+                          {doc.author.name}
+                        </p>
+                        <p className="text-xs text-sky-500">{doc.date}</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400">Valeur:</span>{" "}
-                      <span className="text-slate-700">{doc.value}</span>
-                    </div>
-                  </div>
 
-                  {/* Boutons d'action */}
-                  <div className="flex items-center gap-2 sm:ml-auto">
-                    <button className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors">
-                      <Download size={14} />
-                      Télécharger
-                    </button>
-                    <button className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors">
-                      <Eye size={14} />
-                      Aperçu
-                    </button>
+                    {/* Métadonnées */}
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-8 text-sm text-slate-500 sm:ml-4">
+                      <div>
+                        <span className="text-slate-400">Projet :</span>{" "}
+                        <span className="text-slate-700">{doc.project}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400">Valeur:</span>{" "}
+                        <span className="text-slate-700">{doc.value}</span>
+                      </div>
+                    </div>
+
+                    {/* Boutons d'action */}
+                    <div className="flex items-center gap-2 sm:ml-auto">
+                      <button
+                        disabled={!doc.url}
+                        onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}
+                        className="flex items-center gap-2 bg-red-500 hover:bg-red-600 disabled:bg-slate-300 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                      >
+                        <Download size={14} />
+                        Télécharger
+                      </button>
+                      <button
+                        disabled={!doc.url}
+                        onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}
+                        className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-300 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                      >
+                        <Eye size={14} />
+                        Aperçu
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Bouton Afficher plus */}

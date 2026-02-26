@@ -1,14 +1,16 @@
 /**
  * Navigation centrale
  * - Container pilule avec bordure grise
- * - Liens : Accueil, Annuaires, Nos projets (liens #)
+ * - Liens : Accueil, Annuaires, Nos projets (liens firstimmo)
  * - États hover
  */
 const Navigation = () => {
+  const firstimmoUrl = import.meta.env.VITE_FIRSTIMMO_URL || 'http://localhost:8084';
+  
   const navItems = [
-    { label: "Accueil", path: "#" },
-    { label: "Annuaires", path: "#" },
-    { label: "Nos projets", path: "#" },
+    { label: "Accueil", path: `${firstimmoUrl}/` },
+    { label: "Annuaires", path: `${firstimmoUrl}/Pannuaire` },
+    { label: "Nos projets", path: `${firstimmoUrl}/liste-proj` },
   ];
 
   return (

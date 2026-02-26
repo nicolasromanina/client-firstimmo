@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
+import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import Projects from "./pages/Projects";
@@ -16,6 +17,16 @@ import Header from "./components/Header";
 import Settings from "./pages/Settings";
 import BecomePromoteur from "./pages/BecomePromoteur";
 import BecomePromoteurPayment from "./pages/BecomePromoteurPayment";
+import Alerts from "./pages/Alerts";
+import ProjectDetail from "./pages/ProjectDetail";
+import Comparer from "./pages/Comparer";
+import ComparisonDetail from "./pages/ComparisonDetail";
+import AcceptInvitationRedirect from "./pages/AcceptInvitationRedirect";
+import Calendar from "./pages/Calendar";
+import Reviews from "./pages/Reviews";
+import Upgrade from "./pages/Upgrade";
+import Pricing from "./pages/Pricing";
+
 
 const queryClient = new QueryClient();
 
@@ -36,7 +47,7 @@ const App = () => (
           <Route path="/parametres" element={<Settings />} />
 
           {/* Mon profil - Vue détaillée */}
-          <Route path="/profil" element={<Profile />} />
+          <Route path="/profile" element={<Profile />} />
           
           {/* Modifier le profil - Formulaire d'édition */}
           <Route path="/profil/edit" element={<ProfileEdit />} />
@@ -50,12 +61,33 @@ const App = () => (
           
           {/* Mes projets - Liste des projets */}
           <Route path="/projets" element={<Projects />} />
+          <Route path="/projets/:id" element={<ProjectDetail />} />
+          <Route path="/comparer" element={<Comparer />} />
+          <Route path="/comparaisons/:id" element={<ComparisonDetail />} />
+          {/* Tarification */}
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/upgrade" element={<Upgrade />} />
           
           {/* Documents - Liste des documents */}
           <Route path="/documents" element={<Documents />} />
           
           {/* Partenaires - Liste des partenaires */}
           <Route path="/partenaires" element={<Partners />} />
+          
+          {/* Page de messagerie client */}
+          <Route path="/messages" element={<Messages />} />
+          
+          {/* Alertes */}
+          <Route path="/alertes" element={<Alerts />} />
+
+          {/* Rendez-vous */}
+          <Route path="/rendez-vous" element={<Calendar />} />
+
+          {/* Mes avis */}
+          <Route path="/avis" element={<Reviews />} />
+
+          {/* Bridge d'invitation d'equipe vers le dashboard promoteur */}
+          <Route path="/accept-invitation/:token" element={<AcceptInvitationRedirect />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

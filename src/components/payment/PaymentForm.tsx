@@ -15,17 +15,22 @@ import { toast } from "sonner";
 
 /**
  * Noms et prix des plans pour le récapitulatif
+ * Prix annuels en euros HT
  */
 const planNames: Record<string, string> = {
-  basique: "Basique",
-  standard: "Standard",
-  premium: "Premium",
+  starter: "Starter",
+  publie: "Publié",
+  verifie: "Vérifié",
+  partenaire: "Partenaire",
+  enterprise: "Enterprise",
 };
 
 const planPrices: Record<string, number> = {
-  basique: 20,
-  standard: 100,
-  premium: 250,
+  starter: 600,
+  publie: 1500,
+  verifie: 4200,
+  partenaire: 7200,
+  enterprise: 0,
 };
 
 /**
@@ -178,13 +183,13 @@ const PaymentForm = ({ plan }: PaymentFormProps) => {
             <p className="text-sm font-semibold text-gray-900">
               Plan {planNames[plan] || plan}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">Abonnement mensuel</p>
+            <p className="text-xs text-gray-500 mt-0.5">Abonnement annuel</p>
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-gray-900">
               {planPrices[plan] || 0}€
             </p>
-            <p className="text-xs text-gray-500">/mois</p>
+            <p className="text-xs text-gray-500">/an</p>
           </div>
         </div>
       </div>
@@ -388,7 +393,7 @@ const PaymentForm = ({ plan }: PaymentFormProps) => {
             Traitement du paiement...
           </>
         ) : (
-          <>Payer {planPrices[plan] || 0}€ / mois</>
+          <>Payer {planPrices[plan] || 0}€ / an</>
         )}
       </button>
 

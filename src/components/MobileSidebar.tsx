@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { LayoutGrid, Users, Image, FileText, RefreshCw, Settings, Menu, X, User, FolderKanban } from "lucide-react";
+import { LayoutGrid, Settings, Menu, X, CalendarDays, Star } from "lucide-react";
 import userIcon from "@/assets/user-icon.svg";
 import projectIcon from "@/assets/project-icon.svg";
 import documentIcon from "@/assets/document-icon.svg";
@@ -59,8 +59,10 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ inline = false }) => {
 
   const mainNavItems = [
     { icon: <LayoutGrid className="w-5 h-5" />, label: "Tableau de bord", to: "/" },
-    { icon: <img src={userIcon} alt="Mon profil" className="w-5 h-5" />, label: "Mon profil", to: "/profil" },
+    { icon: <img src={userIcon} alt="Mon profil" className="w-5 h-5" />, label: "Mon profil", to: "/profile" },
     { icon: <img src={projectIcon} alt="Projets" className="w-5 h-5" />, label: "Projets", to: "/projets" },
+    { icon: <CalendarDays className="w-5 h-5" />, label: "Rendez-vous", to: "/rendez-vous" },
+    { icon: <Star className="w-5 h-5" />, label: "Mes avis", to: "/avis" },
     { icon: <img src={documentIcon} alt="Documents" className="w-5 h-5" />, label: "Documents", to: "/documents" },
     { icon: <img src={partnerIcon} alt="Partenaires" className="w-5 h-5" />, label: "Partenaires", to: "/partenaires" },
   ];

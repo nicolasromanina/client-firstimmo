@@ -37,8 +37,9 @@ const BecomePromoteurPayment = () => {
   const [searchParams] = useSearchParams();
   const plan = searchParams.get("plan");
 
-  // Si pas de plan sélectionné, rediriger vers le choix de plan
-  if (!plan || !["basique", "standard", "premium"].includes(plan)) {
+  // Si pas de plan sélectionné ou plan invalide, rediriger vers le choix de plan
+  // Enterprise n'a pas de flux de paiement direct (sur devis → contact)
+  if (!plan || !["starter", "publie", "verifie", "partenaire"].includes(plan)) {
     return <Navigate to="/devenir-promoteur" replace />;
   }
 
