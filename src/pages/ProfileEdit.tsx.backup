@@ -1,16 +1,15 @@
-import { Upload, ChevronDown, Crown, ArrowRight, Loader } from "lucide-react";
+﻿import { Upload, ChevronDown, Crown, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import avatarRobert from "@/assets/avatar-robert.svg";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useClientProfile, useUpdateClientProfile, usePromoteurStatus } from "@/hooks/useApi";
-import { uploadFile } from "@/lib/api";
 import { toast } from "sonner";
 
 /**
  * ProfileEdit Page (Modifier mon profil)
- * Formulaire complet d'édition du profil utilisateur
+ * Formulaire complet d'Ã©dition du profil utilisateur
  * Avec sections: infos personnelles, infos projet, accompagnements
  */
 
@@ -20,115 +19,61 @@ const ProfileEdit = () => {
   const updateProfile = useUpdateClientProfile();
   const { data: promoteurStatus } = usePromoteurStatus();
 
-  // État du formulaire
+  // Ã‰tat du formulaire
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
     email: "",
     telephone: "",
     residence: "Paris, France",
-    address: "",
+    adresse: "",
     objectif: [] as string[],
     modePaiement: "comptant",
     dejaInvesti: "oui",
     aversionRisque: "",
     accompagnements: [] as string[],
   });
-  const [fieldErrors, setFieldErrors] = useState<{ nom?: string; prenom?: string; email?: string; telephone?: string }>({});
-  
-  // État pour le changement d'avatar
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const validateNom = (value: string): string | null => {
-    const v = value.trim();
-    if (!v) return "Le nom est requis.";
-    if (v.length < 2) return "Le nom doit contenir au moins 2 caractères.";
-    if (v.length > 50) return "Le nom ne peut pas dépasser 50 caractères.";
-    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(v)) return "Le nom contient des caractères invalides.";
-    if (/\d/.test(v)) return "Le nom ne peut pas contenir de chiffres.";
-    return null;
-  };
-
-  const validatePrenom = (value: string): string | null => {
-    const v = value.trim();
-    if (!v) return "Le prénom est requis.";
-    if (v.length < 2) return "Le prénom doit contenir au moins 2 caractères.";
-    if (v.length > 50) return "Le prénom ne peut pas dépasser 50 caractères.";
-    if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(v)) return "Le prénom contient des caractères invalides.";
-    if (/\d/.test(v)) return "Le prénom ne peut pas contenir de chiffres.";
-    return null;
-  };
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; telephone?: string }>({});
 
   const validateEmail = (value: string): string | null => {
-    const v = value.trim().toLowerCase();
+    const v = value.trim();
     if (!v) return null;
-    
-    // Validation RFC 5322 simplifiée
-    const emailRegex = /^[^\s@][^\s@]*@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(v)) return "Adresse email invalide.";
-    
-    // Vérifications supplémentaires
-    if (v.length > 254) return "Adresse email trop longue (max. 254 caractères).";
-    if (v.startsWith('.') || v.endsWith('.')) return "L'email ne peut pas commencer ou finir par un point.";
-    if (v.includes('..')) return "L'email ne peut pas contenir deux points consécutifs.";
-    
-    const [local, domain] = v.split('@');
-    if (!local || local.length > 64) return "La partie avant @ est trop longue (max. 64 caractères).";
-    if (!domain || domain.length > 255) return "Le domaine est trop long (max. 255 caractères).";
-    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain)) return "Le domaine est invalide.";
-    if (domain.startsWith('-') || domain.endsWith('-')) return "Le domaine ne peut pas commencer ou finir par un tiret.";
-    if (domain.includes('..')) return "Le domaine ne peut pas contenir deux points consécutifs.";
-    
+    if (v.length > 254) return "Adresse email trop longue.";
     return null;
   };
 
   const validatePhone = (value: string): string | null => {
     const v = value.trim();
     if (!v) return "Le numéro de téléphone est requis.";
-    
-    // Caractères autorisés : chiffres, +, espaces, parenthèses, tirets
-    const allowed = /^[0-9+\s().\-]+$/;
+    const allowed = /^[0-9+\s().-]+$/;
     if (!allowed.test(v)) return "Le numéro contient des caractères invalides.";
-    
-    // Extraire seulement les chiffres pour compter
     const digits = v.replace(/\D/g, "");
-    if (digits.length < 8) return "Le numéro doit contenir au moins 8 chiffres.";
-    if (digits.length > 15) return "Le numéro ne peut pas dépasser 15 chiffres.";
-    
-    // Vérifier que ce n'est pas juste des 0 ou des 1
-    if (/^[01]+$/.test(digits)) return "Le numéro est invalide.";
-    
-    // Limiter la longueur totale (avec formatage)
-    if (v.length > 25) return "Le numéro est trop long.";
-    
+    if (digits.length < 8) return "Le numéro est trop court (min. 8 chiffres).";
+    if (digits.length > 15) return "Le numéro est trop long (max. 15 chiffres).";
     return null;
   };
 
   const validateForm = () => {
-    const nomError = validateNom(formData.nom);
-    const prenomError = validatePrenom(formData.prenom);
     const emailError = validateEmail(formData.email);
     const phoneError = validatePhone(formData.telephone);
-    const nextErrors: { nom?: string; prenom?: string; email?: string; telephone?: string } = {};
-    if (nomError) nextErrors.nom = nomError;
-    if (prenomError) nextErrors.prenom = prenomError;
+    const nextErrors: { email?: string; telephone?: string } = {};
     if (emailError) nextErrors.email = emailError;
     if (phoneError) nextErrors.telephone = phoneError;
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
-  // Pré-remplir le formulaire avec les données utilisateur et profil
+  // PrÃ©-remplir le formulaire avec les donnÃ©es utilisateur et profil
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
       nom: user?.lastName || prev.nom,
       prenom: user?.firstName || prev.prenom,
       email: user?.email || prev.email,
-      telephone: user?.phone || profile?.phone || prev.telephone,
-      address: profile?.address || prev.address,
+      telephone: user?.phone || profile?.telephone || prev.telephone,
+      adresse: profile?.adresse || prev.adresse,
       residence: profile?.residence || prev.residence,
       objectif: profile?.objectif || prev.objectif,
       modePaiement: profile?.modePaiement || prev.modePaiement,
@@ -148,60 +93,6 @@ const ProfileEdit = () => {
     }));
   };
 
-  // Handler pour le changement d'avatar
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('image/')) {
-      toast.error('Veuillez sélectionner une image valide.');
-      return;
-    }
-
-    // Vérifier la taille (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('L\'image ne doit pas dépasser 5MB.');
-      return;
-    }
-
-    // Créer une aperçu local
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload l'avatar
-    try {
-      setIsUploadingAvatar(true);
-      const formDataObj = new FormData();
-      formDataObj.append('avatar', file);
-
-      const response = await uploadFile('/api/client/avatar', formDataObj, 'PUT');
-
-      if (response.data?.avatar) {
-        setAvatarPreview(response.data.avatar);
-        await refreshProfile();
-        toast.success('Avatar mis à jour avec succès!');
-      }
-    } catch (error) {
-      console.error('Erreur upload avatar:', error);
-      toast.error('Erreur lors du téléchargement de l\'avatar.');
-      setAvatarPreview(null);
-    } finally {
-      setIsUploadingAvatar(false);
-      // Réinitialiser l'input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
   // Handler pour soumettre le formulaire
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -209,24 +100,22 @@ const ProfileEdit = () => {
       return;
     }
     try {
-      const dejaInvestiValue = formData.dejaInvesti === "oui" ? true : (formData.dejaInvesti === "non" ? false : undefined);
-      
       await updateProfile.mutateAsync({
         firstName: formData.prenom,
         lastName: formData.nom,
         phone: formData.telephone,
-        address: formData.address,
+        adresse: formData.adresse,
         residence: formData.residence,
         objectif: formData.objectif,
         modePaiement: formData.modePaiement,
-        dejaInvesti: dejaInvestiValue as any,
+        dejaInvesti: formData.dejaInvesti,
         aversionRisque: formData.aversionRisque,
         accompagnements: formData.accompagnements,
       });
       refreshProfile();
-      toast.success('Profil mis à jour avec succès');
+      toast.success('Profil mis Ã  jour avec succÃ¨s');
     } catch {
-      toast.error('Erreur lors de la mise à jour du profil');
+      toast.error('Erreur lors de la mise Ã  jour du profil');
     }
   };
 
@@ -238,7 +127,7 @@ const ProfileEdit = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
               <img
-                src={avatarPreview || user?.avatar || avatarRobert}
+                src={user?.avatar || avatarRobert}
                 alt="Photo de profil"
                 className="w-16 h-16 rounded-full object-cover"
               />
@@ -248,31 +137,10 @@ const ProfileEdit = () => {
               </div>
             </div>
 
-            <button
-              onClick={handleAvatarClick}
-              disabled={isUploadingAvatar}
-              className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-full transition-colors self-start sm:self-auto"
-            >
-              {isUploadingAvatar ? (
-                <>
-                  <Loader size={18} className="animate-spin" />
-                  Téléchargement...
-                </>
-              ) : (
-                <>
-                  <Upload size={18} />
-                  Importer une photo
-                </>
-              )}
+            <button className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 px-6 rounded-full transition-colors self-start sm:self-auto">
+              <Upload size={18} />
+              Importer une photo
             </button>
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
           </div>
         </div>
 
@@ -291,50 +159,22 @@ const ProfileEdit = () => {
               <input
                 type="text"
                 value={formData.nom}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData({ ...formData, nom: value });
-                  if (fieldErrors.nom) setFieldErrors((prev) => ({ ...prev, nom: undefined }));
-                }}
-                onBlur={() => {
-                  const err = validateNom(formData.nom);
-                  setFieldErrors((prev) => ({ ...prev, nom: err || undefined }));
-                }}
-                maxLength={50}
-                className={`w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 ${
-                  fieldErrors.nom ? "ring-2 ring-red-400" : "focus:ring-sky-500"
-                }`}
+                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
-              {fieldErrors.nom && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.nom}</p>
-              )}
             </div>
 
-            {/* Prénom */}
+            {/* PrÃ©nom */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Prénom(s) <span className="text-red-500">*</span>
+                PrÃ©nom(s)<span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.prenom}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData({ ...formData, prenom: value });
-                  if (fieldErrors.prenom) setFieldErrors((prev) => ({ ...prev, prenom: undefined }));
-                }}
-                onBlur={() => {
-                  const err = validatePrenom(formData.prenom);
-                  setFieldErrors((prev) => ({ ...prev, prenom: err || undefined }));
-                }}
-                maxLength={50}
-                className={`w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 ${
-                  fieldErrors.prenom ? "ring-2 ring-red-400" : "focus:ring-sky-500"
-                }`}
+                onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+                className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
-              {fieldErrors.prenom && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.prenom}</p>
-              )}
             </div>
 
             {/* Email */}
@@ -354,7 +194,6 @@ const ProfileEdit = () => {
                   const err = validateEmail(formData.email);
                   setFieldErrors((prev) => ({ ...prev, email: err || undefined }));
                 }}
-                maxLength={254}
                 className={`w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 ${
                   fieldErrors.email ? "ring-2 ring-red-400" : "focus:ring-sky-500"
                 }`}
@@ -362,33 +201,25 @@ const ProfileEdit = () => {
               {fieldErrors.email && (
                 <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>
               )}
-              {formData.email && !fieldErrors.email && (
-                <p className="text-xs text-green-600 mt-1">✓ Email valide</p>
-              )}
             </div>
 
-            {/* Téléphone */}
+            {/* TÃ©lÃ©phone */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Téléphone <span className="text-red-500">*</span>
+                TÃ©lÃ©phone<span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
                 value={formData.telephone}
                 onChange={(e) => {
                   const value = e.target.value;
-                  // Limiter à 25 caractères max pour éviter les abus
-                  if (value.length <= 25) {
-                    setFormData({ ...formData, telephone: value });
-                    if (fieldErrors.telephone) setFieldErrors((prev) => ({ ...prev, telephone: undefined }));
-                  }
+                  setFormData({ ...formData, telephone: value });
+                  if (fieldErrors.telephone) setFieldErrors((prev) => ({ ...prev, telephone: undefined }));
                 }}
                 onBlur={() => {
                   const err = validatePhone(formData.telephone);
                   setFieldErrors((prev) => ({ ...prev, telephone: err || undefined }));
                 }}
-                maxLength={25}
-                placeholder="+33 1 23 45 67 89 ou 0123456789"
                 className={`w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 ${
                   fieldErrors.telephone ? "ring-2 ring-red-400" : "focus:ring-sky-500"
                 }`}
@@ -396,19 +227,16 @@ const ProfileEdit = () => {
               {fieldErrors.telephone && (
                 <p className="text-xs text-red-600 mt-1">{fieldErrors.telephone}</p>
               )}
-              {formData.telephone && !fieldErrors.telephone && (
-                <p className="text-xs text-green-600 mt-1">✓ Téléphone valide ({formData.telephone.replace(/\D/g, "").length} chiffres)</p>
-              )}
             </div>
 
-            {/* Résidence */}
+            {/* RÃ©sidence */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Résidence
+                RÃ©sidence
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <span className="text-lg">📍</span>
+                  <span className="text-lg">ðŸ‡«ðŸ‡·</span>
                 </div>
                 <select
                   value={formData.residence}
@@ -430,8 +258,8 @@ const ProfileEdit = () => {
               </label>
               <input
                 type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                value={formData.adresse}
+                onChange={(e) => setFormData({ ...formData, adresse: e.target.value })}
                 className="w-full px-4 py-3 bg-[#007BFF0A] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
             </div>
@@ -450,7 +278,7 @@ const ProfileEdit = () => {
               Qu'est-ce que vous recherchez ?
             </label>
             <div className="flex flex-wrap gap-4">
-              {["Investissement", "Résidence principale", "Résidence secondaire"].map((option) => (
+              {["Investissement", "RÃ©sidence principale", "RÃ©sidence secondaire"].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -464,15 +292,15 @@ const ProfileEdit = () => {
             </div>
           </div>
 
-          {/* Mode de paiement & Déjà investi */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Mode de paiement & DÃ©jÃ  investi */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Mode de paiement */}
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-3">
                 Mode de paiement
               </label>
               <div className="flex gap-6">
-                {["Comptant", "Crédit"].map((option) => (
+                {["Comptant", "CrÃ©dit"].map((option) => (
                   <label key={option} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
@@ -488,10 +316,10 @@ const ProfileEdit = () => {
               </div>
             </div>
 
-            {/* Avez-vous déjà investi ? */}
+            {/* Avez-vous dÃ©jÃ  investi ? */}
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-3">
-                Avez-vous déjà investi ?
+                Avez-vous dÃ©jÃ  investi ?
               </label>
               <div className="flex gap-6">
                 {["Oui", "Non"].map((option) => (
@@ -510,13 +338,6 @@ const ProfileEdit = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Section Autres informations */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">
-            Autres informations
-          </h3>
 
           {/* Aversion au risque */}
           <div className="mb-6">
@@ -557,8 +378,8 @@ const ProfileEdit = () => {
                 "Notaire",
                 "Avocat",
                 "Architecte",
-                "Société BTP",
-                "Non je ne souhaite pas être accompagné",
+                "SociÃ©tÃ© BTP",
+                "Non je ne souhaite pas Ãªtre accompagnÃ©",
               ].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -574,7 +395,7 @@ const ProfileEdit = () => {
           </div>
         </div>
 
-        {/* Bannière Devenir Promoteur */}
+        {/* BanniÃ¨re Devenir Promoteur */}
         {!promoteurStatus?.isPromoteur && (
           <div className="bg-gradient-to-r from-coral-500 to-amber-500 rounded-2xl p-6 shadow-sm mb-6 text-white">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -585,7 +406,7 @@ const ProfileEdit = () => {
                 <div>
                   <h3 className="text-lg font-bold mb-1">Vous souhaitez vendre vos projets ?</h3>
                   <p className="text-sm text-coral-100">
-                    Devenez promoteur et accédez à un espace dédié pour publier vos projets, gérer vos leads et développer votre activité.
+                    Devenez promoteur et accÃ©dez Ã  un espace dÃ©diÃ© pour publier vos projets, gÃ©rer vos leads et dÃ©velopper votre activitÃ©.
                   </p>
                 </div>
               </div>
@@ -601,14 +422,14 @@ const ProfileEdit = () => {
           </div>
         )}
 
-        {/* Bouton Mettre à jour */}
+        {/* Bouton Mettre Ã  jour */}
         <div className="text-center">
           <button
             onClick={handleSubmit}
             disabled={updateProfile.isPending}
-            className="bg-[#007BFF] hover:bg-[#0056b3] text-white font-medium py-3 px-8 rounded-full transition-colors disabled:opacity-50"
+            className="bg-[#007BFF] hover:bg-[#007BFF] text-white font-medium py-3 px-8 rounded-full transition-colors disabled:opacity-50"
           >
-            {updateProfile.isPending ? 'Mise à jour...' : 'Mettre à jour mon profil'}
+            {updateProfile.isPending ? 'Mise Ã  jour...' : 'Mettre Ã  jours mon profil'}
           </button>
         </div>
       </div>
@@ -617,4 +438,6 @@ const ProfileEdit = () => {
 };
 
 export default ProfileEdit;
+
+
 

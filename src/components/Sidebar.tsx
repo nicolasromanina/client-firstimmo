@@ -55,7 +55,6 @@ const Sidebar = () => {
     { icon: <LayoutGrid className="w-5 h-5" />, label: "Tableau de bord", to: "/" },
     { icon: <img src={userIcon} alt="Mon profil" className="w-5 h-5" />, label: "Mon profil", to: "/profile" },
     { icon: <img src={projectIcon} alt="Projets" className="w-5 h-5" />, label: "Projets", to: "/projets" },
-    { icon: <BarChart3 className="w-5 h-5" />, label: "Marché", to: "/marche" },
     { icon: <BarChart3 className="w-5 h-5" />, label: "Comparer", to: "/comparer" },
     { icon: <MessageCircle className="w-5 h-5" />, label: "Messages", to: "/messages" },
     { icon: <CalendarDays className="w-5 h-5" />, label: "Rendez-vous", to: "/rendez-vous" },

@@ -3,17 +3,29 @@ import { io, Socket } from 'socket.io-client';
 
 const WS_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api$/, '');
 
-interface UseWebSocketReturn {
-  isConnected: boolean;
-  socket: Socket | null;
+interface Notification {
+  _id: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  read: boolean;
+  createdAt: string;
+  actionUrl?: string;
+  priority?: string;
 }
 
-/**
- * Hook WebSocket pour le chat en temps réel (client)
- * Se connecte au serveur socket.io avec authentification JWT
- */
+interface UseWebSocketReturn {
+  isConnected: boolean;
+  notifications: Notification[];
+  unreadCount: number;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+}
+
 export const useWebSocket = (): UseWebSocketReturn => {
   const [isConnected, setIsConnected] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -29,8 +41,6 @@ export const useWebSocket = (): UseWebSocketReturn => {
     });
 
     socketRef.current = socket;
-
-    // Expose socket globally for simple integrations
     (window as any).__socket__ = socket;
 
     socket.on('connect', () => {
@@ -47,11 +57,35 @@ export const useWebSocket = (): UseWebSocketReturn => {
       console.error('[WS] Connection error:', error);
     });
 
+    socket.on('notification', (notification: Notification) => {
+      setNotifications(prev => [notification, ...prev].slice(0, 50));
+    });
+
+    socket.on('notification:read', ({ notificationId }: { notificationId: string }) => {
+      setNotifications(prev =>
+        prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
+      );
+    });
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
   }, []);
 
-  return { isConnected, socket: socketRef.current };
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = useCallback((id: string) => {
+    socketRef.current?.emit('notification:markRead', { notificationId: id });
+    setNotifications(prev =>
+      prev.map(n => n._id === id ? { ...n, read: true } : n)
+    );
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    socketRef.current?.emit('notification:markAllRead');
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, []);
+
+  return { isConnected, notifications, unreadCount, markAsRead, markAllAsRead };
 };

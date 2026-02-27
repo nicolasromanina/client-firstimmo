@@ -125,6 +125,13 @@ export const usePartners = (params?: { type?: string }) => {
   });
 };
 
+export const useCreatePartnerContactRequest = () => {
+  return useMutation({
+    mutationFn: (data: Parameters<typeof partnerService.createContactRequest>[0]) =>
+      partnerService.createContactRequest(data),
+  });
+};
+
 // ===== Documents =====
 export const useClientDocuments = (params?: { category?: string }) => {
   return useQuery({

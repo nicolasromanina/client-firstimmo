@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +45,9 @@ export const AlertForm = ({ onSubmit, onCancel, isLoading, initialData }: AlertF
   });
 
   const selectedChannels = watch('channels') || [];
-  const selectedType = watch('type');
+  const selectedType = watch('type') || 'new-project';
+  const selectedFrequency = watch('frequency') || 'instant';
+  const verifiedOnly = watch('criteria.verifiedOnly') || false;
 
   const handleChannelToggle = (channel: Alert['channels'][0]) => {
     const current = selectedChannels || [];
@@ -86,16 +87,36 @@ export const AlertForm = ({ onSubmit, onCancel, isLoading, initialData }: AlertF
   };
 
   const onFormSubmit = async (data: AlertFormData) => {
-    // Auto-fill title and message if not provided
-    if (!data.title) {
-      data.title = getDefaultTitle(data.type);
-    }
-    if (!data.message) {
-      data.message = getDefaultMessage(data.type);
+    // Use watched values as authoritative source (react-hook-form may omit unregistered fields from data)
+    const type = selectedType;
+    const channels = selectedChannels.length > 0 ? selectedChannels : ['email'];
+    const frequency = selectedFrequency;
+
+    const title = data.title || getDefaultTitle(type);
+    const message = data.message || getDefaultMessage(type);
+
+    // Strip NaN / undefined from numeric criteria fields so Mongoose doesn't reject them
+    const criteria: AlertFormData['criteria'] = {};
+    if (data.criteria) {
+      if (data.criteria.countries?.length) criteria.countries = data.criteria.countries;
+      if (data.criteria.cities?.length) criteria.cities = data.criteria.cities;
+      if (data.criteria.projectTypes?.length) criteria.projectTypes = data.criteria.projectTypes;
+      if (typeof data.criteria.budgetMin === 'number' && !isNaN(data.criteria.budgetMin))
+        criteria.budgetMin = data.criteria.budgetMin;
+      if (typeof data.criteria.budgetMax === 'number' && !isNaN(data.criteria.budgetMax))
+        criteria.budgetMax = data.criteria.budgetMax;
+      if (typeof data.criteria.minTrustScore === 'number' && !isNaN(data.criteria.minTrustScore))
+        criteria.minTrustScore = data.criteria.minTrustScore;
+      if (data.criteria.verifiedOnly === true) criteria.verifiedOnly = true;
     }
 
     await onSubmit({
-      ...data,
+      type,
+      title,
+      message,
+      frequency,
+      channels,
+      criteria,
       isActive: true,
       isRead: false,
       triggerCount: 0,
@@ -170,7 +191,7 @@ export const AlertForm = ({ onSubmit, onCancel, isLoading, initialData }: AlertF
           <div className="space-y-2">
             <Label htmlFor="frequency">Fréquence</Label>
             <Select
-              value={watch('frequency')}
+              value={selectedFrequency}
               onValueChange={(value) => setValue('frequency', value as Alert['frequency'])}
             >
               <SelectTrigger>
@@ -278,7 +299,10 @@ export const AlertForm = ({ onSubmit, onCancel, isLoading, initialData }: AlertF
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="verifiedOnly"
-                {...register('criteria.verifiedOnly')}
+                checked={verifiedOnly}
+                onCheckedChange={(checked) =>
+                  setValue('criteria.verifiedOnly', checked === true, { shouldDirty: true })
+                }
               />
               <Label htmlFor="verifiedOnly" className="cursor-pointer">
                 Promoteurs vérifiés uniquement

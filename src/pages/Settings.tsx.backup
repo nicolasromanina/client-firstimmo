@@ -3,21 +3,20 @@ import { Bell, Lock, Globe, User, Moon, Mail, Shield, ChevronRight, Crown } from
 import { Link } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import { useTheme } from "@/hooks/use-theme";
-import { useClientProfile, usePromoteurStatus, useUpdateClientProfile } from "@/hooks/useApi";
+import { usePromoteurStatus } from "@/hooks/useApi";
 import { getPreferredCurrency, setPreferredCurrency, type PreferredCurrency } from "@/lib/userPreferences";
-import { useToast } from "@/hooks/use-toast";
 
 /**
- * Settings - Page Paramètres du dashboard promoteur
+ * Settings - Page ParamÃ¨tres du dashboard promoteur
  *
  * Sections :
  * - Compte (langue, fuseau horaire)
  * - Notifications (email, push)
- * - Sécurité (mot de passe, 2FA)
- * - Apparence (thème) – connecté au ThemeProvider
+ * - SÃ©curitÃ© (mot de passe, 2FA)
+ * - Apparence (thÃ¨me) â€“ connectÃ© au ThemeProvider
  */
 
-/* ---------- Toggle switch réutilisable ---------- */
+/* ---------- Toggle switch rÃ©utilisable ---------- */
 const Toggle = ({
   enabled = false,
   onToggle,
@@ -91,62 +90,17 @@ const SettingRow = ({
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
-  const { toast } = useToast();
-  const { data: clientProfile } = useClientProfile();
-  const updateClientProfile = useUpdateClientProfile();
   const { data: promoteurStatus } = usePromoteurStatus();
   const [preferredCurrency, setPreferredCurrencyState] = useState<PreferredCurrency>("EUR");
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    email: true,
-    whatsapp: false,
-    newLeads: true,
-    projectUpdates: true,
-  });
 
   useEffect(() => {
     setPreferredCurrencyState(getPreferredCurrency());
   }, []);
 
-  useEffect(() => {
-    const notifications = clientProfile?.preferences?.notifications;
-    if (!notifications) return;
-    setNotificationPrefs({
-      email: notifications.email ?? true,
-      whatsapp: notifications.whatsapp ?? false,
-      newLeads: notifications.newLeads ?? true,
-      projectUpdates: notifications.projectUpdates ?? true,
-    });
-  }, [clientProfile]);
-
   const handleCurrencyChange = (value: string) => {
     const next = value === "XOF" ? "XOF" : "EUR";
     setPreferredCurrencyState(next);
     setPreferredCurrency(next);
-  };
-
-  const handleNotificationToggle = async (
-    key: "email" | "whatsapp" | "newLeads" | "projectUpdates"
-  ) => {
-    const previous = notificationPrefs;
-    const next = {
-      ...notificationPrefs,
-      [key]: !notificationPrefs[key],
-    };
-    setNotificationPrefs(next);
-    try {
-      await updateClientProfile.mutateAsync({
-        preferences: {
-          notifications: next,
-        },
-      });
-    } catch {
-      setNotificationPrefs(previous);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'enregistrer vos préférences de notifications.",
-        variant: "destructive",
-      });
-    }
   };
 
   return (
@@ -163,22 +117,22 @@ const Settings = () => {
 
         {/* Contenu principal */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-16 lg:pt-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-gray-100 mb-6">Paramètres</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-gray-100 mb-6">ParamÃ¨tres</h1>
 
           <div className="max-w-3xl">
             {/* ---- Compte ---- */}
             <SectionCard title="Compte" icon={<User className="w-5 h-5" />}>
               <SettingRow label="Langue" description="Langue de l'interface">
                 <select className="px-3 py-2 rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700 text-sm text-slate-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-coral-500">
-                  <option value="fr">Français</option>
+                  <option value="fr">FranÃ§ais</option>
                   <option value="en">English</option>
-                  <option value="ar">العربية</option>
+                  <option value="ar">Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©</option>
                 </select>
               </SettingRow>
 
               <SettingRow
                 label="Fuseau horaire"
-                description="Définir le fuseau horaire de votre compte"
+                description="DÃ©finir le fuseau horaire de votre compte"
               >
                 <select className="px-3 py-2 rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700 text-sm text-slate-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-coral-500">
                   <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
@@ -208,51 +162,39 @@ const Settings = () => {
                 label="Notifications par email"
                 description="Recevoir les alertes par email"
               >
-                <Toggle
-                  enabled={notificationPrefs.email}
-                  onToggle={() => !updateClientProfile.isLoading && handleNotificationToggle("email")}
-                />
+                <Toggle enabled />
               </SettingRow>
 
               <SettingRow
                 label="Notifications push"
-                description="Recevoir les notifications par WhatsApp"
+                description="Recevoir les notifications dans le navigateur"
               >
-                <Toggle
-                  enabled={notificationPrefs.whatsapp}
-                  onToggle={() => !updateClientProfile.isLoading && handleNotificationToggle("whatsapp")}
-                />
+                <Toggle enabled={false} />
               </SettingRow>
 
               <SettingRow
                 label="Nouveaux leads"
-                description="Être notifié lors d'un nouveau lead"
+                description="ÃŠtre notifiÃ© lors d'un nouveau lead"
               >
-                <Toggle
-                  enabled={notificationPrefs.newLeads}
-                  onToggle={() => !updateClientProfile.isLoading && handleNotificationToggle("newLeads")}
-                />
+                <Toggle enabled />
               </SettingRow>
 
               <SettingRow
-                label="Mises à jour projets"
-                description="Être notifié des changements sur vos projets"
+                label="Mises Ã  jour projets"
+                description="ÃŠtre notifiÃ© des changements sur vos projets"
               >
-                <Toggle
-                  enabled={notificationPrefs.projectUpdates}
-                  onToggle={() => !updateClientProfile.isLoading && handleNotificationToggle("projectUpdates")}
-                />
+                <Toggle enabled />
               </SettingRow>
             </SectionCard>
 
-            {/* ---- Sécurité ---- */}
+            {/* ---- SÃ©curitÃ© ---- */}
             <SectionCard
-              title="Sécurité"
+              title="SÃ©curitÃ©"
               icon={<Shield className="w-5 h-5" />}
             >
               <SettingRow
                 label="Mot de passe"
-                description="Dernière modification il y a 3 mois"
+                description="DerniÃ¨re modification il y a 3 mois"
               >
                 <button className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-slate-200 dark:border-gray-600 text-sm font-medium text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
                   Modifier
@@ -261,15 +203,15 @@ const Settings = () => {
               </SettingRow>
 
               <SettingRow
-                label="Authentification à deux facteurs"
-                description="Sécurisez votre compte avec la 2FA"
+                label="Authentification Ã  deux facteurs"
+                description="SÃ©curisez votre compte avec la 2FA"
               >
                 <Toggle enabled={false} />
               </SettingRow>
 
               <SettingRow
                 label="Sessions actives"
-                description="Gérer les appareils connectés"
+                description="GÃ©rer les appareils connectÃ©s"
               >
                 <button className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-slate-200 dark:border-gray-600 text-sm font-medium text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
                   Voir
@@ -285,7 +227,7 @@ const Settings = () => {
             >
               <SettingRow
                 label="Mode sombre"
-                description="Activer le thème sombre"
+                description="Activer le thÃ¨me sombre"
               >
                 <Toggle enabled={isDark} onToggle={toggleTheme} />
               </SettingRow>
@@ -301,8 +243,8 @@ const Settings = () => {
                   <h2 className="text-lg font-semibold">Devenir Promoteur</h2>
                 </div>
                 <p className="text-sm text-coral-100 mb-4">
-                  Passez au niveau supérieur ! Publiez vos projets immobiliers, recevez des leads qualifiés
-                  et développez votre activité sur notre plateforme.
+                  Passez au niveau supÃ©rieur ! Publiez vos projets immobiliers, recevez des leads qualifiÃ©s
+                  et dÃ©veloppez votre activitÃ© sur notre plateforme.
                 </p>
                 <Link
                   to="/devenir-promoteur"
@@ -319,7 +261,7 @@ const Settings = () => {
               <SectionCard title="Compte Promoteur" icon={<Crown className="w-5 h-5" />}>
                 <SettingRow
                   label="Statut Promoteur"
-                  description={`Organisation : ${promoteurStatus.promoteur?.organizationName || '–'}`}
+                  description={`Organisation : ${promoteurStatus.promoteur?.organizationName || 'â€”'}`}
                 >
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-sm font-medium">
                     <span className="w-2 h-2 bg-green-500 rounded-full" />
@@ -328,7 +270,7 @@ const Settings = () => {
                 </SettingRow>
                 <SettingRow
                   label="Espace promoteur"
-                  description="Accéder à votre tableau de bord promoteur"
+                  description="AccÃ©der Ã  votre tableau de bord promoteur"
                 >
                   <a
                     href={import.meta.env.VITE_PROMOTEUR_URL || "http://localhost:8081"}
@@ -354,7 +296,7 @@ const Settings = () => {
                 <div>
                   <p className="text-sm font-medium text-slate-900 dark:text-gray-100">Supprimer mon compte</p>
                   <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
-                    Cette action est irréversible. Toutes vos données seront supprimées.
+                    Cette action est irrÃ©versible. Toutes vos donnÃ©es seront supprimÃ©es.
                   </p>
                 </div>
                 <button className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors">

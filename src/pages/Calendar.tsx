@@ -13,6 +13,7 @@ import { BookingWidget } from "@/components/booking/BookingWidget";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -80,11 +81,11 @@ export default function Calendar() {
 
   const { data, isLoading } = useQuery<{ appointments: Appointment[] }>({
     queryKey: ["client-appointments"],
-    queryFn: () => request({ url: "/appointments?role=client", method: "get" }),
+    queryFn: () => request({ url: "/api/client/appointments", method: "get" }),
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (id: string) => request({ url: `/appointments/${id}`, method: "delete" }),
+    mutationFn: (id: string) => request({ url: `/api/client/appointments/${id}/cancel`, method: "patch" }),
     onSuccess: () => {
       toast({ title: "RDV annulé", description: "Le rendez-vous a été annulé avec succès." });
       queryClient.invalidateQueries({ queryKey: ["client-appointments"] });
@@ -224,10 +225,10 @@ export default function Calendar() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Prendre un rendez-vous</DialogTitle>
+            <DialogDescription>
+              Pour prendre un rendez-vous, rendez-vous sur la page d'un projet et utilisez le formulaire de réservation dédié.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-slate-500">
-            Pour prendre un rendez-vous, rendez-vous sur la page d'un projet et utilisez le formulaire de réservation dédié.
-          </p>
           <Button variant="outline" onClick={() => setBookingOpen(false)}>Fermer</Button>
         </DialogContent>
       </Dialog>

@@ -47,7 +47,7 @@ export const BookingWidget = ({ projectId, promoteurId, leadId, onSuccess }: Boo
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
       const response: any = await request({
-        url: `/appointments/slots/${projectId}`,
+        url: `/api/appointments/slots/${projectId}`,
         method: 'get',
         params: { date: dateStr, duration: 30 },
       });
@@ -86,7 +86,7 @@ export const BookingWidget = ({ projectId, promoteurId, leadId, onSuccess }: Boo
       const scheduledAt = new Date(`${data.date}T${data.time}`);
       
       await request({
-        url: '/appointments',
+        url: '/api/appointments',
         method: 'post',
         data: {
           promoteurId,

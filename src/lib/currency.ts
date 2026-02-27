@@ -2,27 +2,36 @@
  * Utilitaires de conversion de devises
  * Taux de change approximatif : 1 EUR = 655 XOF (FCFA)
  */
+import { getPreferredCurrency } from "./userPreferences";
 
 const XOF_TO_EUR_RATE = 655; // 1 EUR = 655 XOF
-const EUR_TO_XOF_RATE = 655; // 1 XOF = 1/655 EUR
+const EUR_TO_XOF_RATE = 655;
+const XOF_CODES = new Set(["XOF", "FCFA"]);
 
-/**
- * Convertit un prix de XOF (FCFA) vers EUR
- */
+const formatEur = (value: number): string =>
+  `${value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+
+const formatXof = (value: number): string =>
+  `${Math.round(value).toLocaleString("fr-FR")} FCFA`;
+
+const normalizeSourceCurrency = (currency?: string | null, amount?: number | null): "EUR" | "XOF" => {
+  const upper = (currency || "").trim().toUpperCase();
+  if (XOF_CODES.has(upper)) return "XOF";
+  if (upper === "EUR") return "EUR";
+  // Fallback pour anciens projets sans devise explicite
+  return (amount ?? 0) >= 10_000 ? "XOF" : "EUR";
+};
+
 export function xofToEur(xof: number): number {
-  return Math.round((xof / XOF_TO_EUR_RATE) * 100) / 100; // Arrondi à 2 décimales
+  return Math.round((xof / XOF_TO_EUR_RATE) * 100) / 100;
 }
 
-/**
- * Convertit un prix de EUR vers XOF (FCFA)
- */
 export function eurToXof(eur: number): number {
   return Math.round(eur * EUR_TO_XOF_RATE);
 }
 
 /**
- * Formate un prix selon la devise
- * Si la devise est XOF/FCFA, convertit en EUR pour l'affichage
+ * Formate un prix selon la devise préférée utilisateur (Settings).
  */
 export function formatPrice(
   price: number | null | undefined,
@@ -32,53 +41,35 @@ export function formatPrice(
     return { value: 0, display: "Prix sur demande", originalCurrency: currency || "EUR" };
   }
 
-  const normalizedCurrency = (currency || "EUR").toUpperCase();
+  const sourceCurrency = normalizeSourceCurrency(currency, price);
+  const preferred = getPreferredCurrency();
 
-  // Si XOF/FCFA, convertir en EUR pour l'affichage
-  if (normalizedCurrency === "XOF" || normalizedCurrency === "FCFA") {
-    const eurValue = xofToEur(price);
+  if (preferred === "EUR") {
+    const eurValue = sourceCurrency === "XOF" ? xofToEur(price) : price;
     return {
       value: eurValue,
-      display: `${eurValue.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`,
-      originalCurrency: "XOF",
+      display: formatEur(eurValue),
+      originalCurrency: sourceCurrency,
     };
   }
 
-  // Sinon, afficher en EUR
+  const xofValue = sourceCurrency === "XOF" ? price : eurToXof(price);
   return {
-    value: price,
-    display: `${price.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`,
-    originalCurrency: normalizedCurrency,
+    value: xofValue,
+    display: formatXof(xofValue),
+    originalCurrency: sourceCurrency,
   };
 }
 
-/**
- * Convertit un prix d'entrée utilisateur (EUR) vers la devise backend si nécessaire
- * Pour les filtres API, on envoie toujours en EUR (le backend gère la conversion si besoin)
- */
 export function convertFilterPriceToBackend(eurPrice: number, targetCurrency?: string): number {
-  const normalizedCurrency = (targetCurrency || "EUR").toUpperCase();
-  
-  // Si le backend attend XOF, convertir EUR → XOF
-  if (normalizedCurrency === "XOF" || normalizedCurrency === "FCFA") {
-    return eurToXof(eurPrice);
-  }
-  
-  // Sinon, garder en EUR
+  const normalizedCurrency = (targetCurrency || "EUR").trim().toUpperCase();
+  if (XOF_CODES.has(normalizedCurrency)) return eurToXof(eurPrice);
   return eurPrice;
 }
 
-/**
- * Convertit un prix du backend vers EUR pour l'affichage dans les filtres
- */
 export function convertBackendPriceToFilter(backendPrice: number, currency?: string): number {
-  const normalizedCurrency = (currency || "EUR").toUpperCase();
-  
-  // Si le backend envoie XOF, convertir XOF → EUR
-  if (normalizedCurrency === "XOF" || normalizedCurrency === "FCFA") {
-    return xofToEur(backendPrice);
-  }
-  
-  // Sinon, garder tel quel
+  const normalizedCurrency = (currency || "EUR").trim().toUpperCase();
+  if (XOF_CODES.has(normalizedCurrency)) return xofToEur(backendPrice);
   return backendPrice;
 }
+

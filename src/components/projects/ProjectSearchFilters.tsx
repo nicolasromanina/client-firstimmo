@@ -157,9 +157,11 @@ export function ProjectSearchFilters({
             <input
               type="checkbox"
               checked={localFilters.verifiedOnly}
-              onChange={(e) =>
-                setLocalFilters((p) => ({ ...p, verifiedOnly: e.target.checked }))
-              }
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setLocalFilters((p) => ({ ...p, verifiedOnly: checked }));
+                onChange({ ...params, verifiedOnly: checked || undefined, page: 1 });
+              }}
               className="rounded border-gray-300"
             />
             <span className="text-sm">Vérifiés uniquement</span>

@@ -14,6 +14,8 @@ interface Document {
   id: number | string;
   type: "pdf" | "image";
   title: string;
+  category?: string;
+  tags?: string[];
   author: {
     name: string;
   };
@@ -34,13 +36,17 @@ type ClientDocumentView = ClientDocument & {
 const Documents = () => {
   const [sortBy, setSortBy] = useState("Promoteur");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>("plans");
-  const { data: apiDocs, isLoading } = useClientDocuments({ category: activeFilter });
+  const [activeFilter, setActiveFilter] = useState<FilterCategory | "all">("all");
+  const { data: apiDocs, isLoading } = useClientDocuments(
+    activeFilter === "all" ? undefined : { category: activeFilter }
+  );
 
   const documents: Document[] = (apiDocs || []).map((doc: ClientDocumentView) => ({
     id: doc._id || doc.id,
     type: doc.type === "image" ? ("image" as const) : ("pdf" as const),
     title: doc.name || doc.title || "Document",
+    category: doc.category,
+    tags: doc.tags || [],
     author: {
       name: doc.promoteurName || doc.author?.name || "Promoteur",
     },
@@ -56,11 +62,22 @@ const Documents = () => {
     value: doc.value || "N/A",
   }));
 
-  const filters: { key: FilterCategory; label: string; color: string; activeColor: string }[] = [
+  const filters: { key: FilterCategory | "all"; label: string; color: string; activeColor: string }[] = [
+    { key: "all", label: "Tous", color: "border-slate-400 text-slate-500", activeColor: "bg-slate-100 text-slate-900" },
     { key: "plans", label: "Plans", color: "border-sky-500 text-sky-500", activeColor: "bg-[#DEECFE] text-[#007BFF]" },
     { key: "juridique", label: "Juridique", color: "border-amber-500 text-amber-500", activeColor: "bg-[#FFF8E5] text-[#FFB800]" },
     { key: "echanges", label: "Échanges", color: "border-green-500 text-green-500", activeColor: "bg-[#1FAF381C] text-[#1FAF38]" },
   ];
+
+  const categoryLabelMap: Record<string, string> = {
+    foncier: "Foncier",
+    plans: "Plans",
+    permis: "Permis",
+    contrats: "Contrats",
+    financier: "Financier",
+    technique: "Technique",
+    autre: "Autre",
+  };
 
   return (
     <DashboardLayout>
@@ -144,6 +161,11 @@ const Documents = () => {
                       )}
                     </div>
                     <h3 className="font-semibold text-slate-900">{doc.title}</h3>
+                    {doc.category && (
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                        {categoryLabelMap[doc.category] || doc.category}
+                      </span>
+                    )}
                   </div>
 
                   {/* Infos et actions */}

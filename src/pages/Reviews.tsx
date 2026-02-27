@@ -53,11 +53,11 @@ export default function Reviews() {
 
   const { data, isLoading } = useQuery<{ reviews: Review[] }>({
     queryKey: ["my-reviews"],
-    queryFn: () => request({ url: "/reviews/my", method: "get" }),
+    queryFn: () => request({ url: "/api/reviews/my", method: "get" }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => request({ url: `/reviews/${id}`, method: "delete" }),
+    mutationFn: (id: string) => request({ url: `/api/reviews/${id}`, method: "delete" }),
     onSuccess: () => {
       toast({ title: "Avis supprimé", description: "Votre avis a été supprimé." });
       queryClient.invalidateQueries({ queryKey: ["my-reviews"] });

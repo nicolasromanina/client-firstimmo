@@ -35,4 +35,20 @@ api.interceptors.response.use(
   }
 );
 
+// Fonction helper pour les uploads de fichiers (FormData)
+export const uploadFile = async (url: string, formData: FormData, method: 'PUT' | 'POST' = 'POST') => {
+  const token = localStorage.getItem('token');
+  const headers: any = {
+    Authorization: token ? `Bearer ${token}` : '',
+    // Ne pas définir Content-Type pour FormData - laisser le navigateur gérer
+  };
+  
+  return axios.request({
+    method,
+    url: `${API_URL}${url}`,
+    data: formData,
+    headers,
+  });
+};
+
 export default api;

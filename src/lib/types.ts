@@ -40,6 +40,16 @@ export interface ClientProfile {
   dejaInvesti?: boolean;
   aversionRisque?: string;
   accompagnements?: string[];
+  preferences?: {
+    language?: 'fr' | 'en';
+    currency?: string;
+    notifications?: {
+      email?: boolean;
+      whatsapp?: boolean;
+      projectUpdates?: boolean;
+      newLeads?: boolean;
+    };
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -132,6 +142,8 @@ export interface ClientDocument {
   _id: string;
   name: string;
   type: 'pdf' | 'image' | 'doc';
+  category?: string;
+  tags?: string[];
   url?: string;
   projectId?: string;
   projectName?: string;
@@ -195,4 +207,9 @@ export interface Partner {
   phone?: string;
   email?: string;
   type?: string;
+  website?: string;
+  address?: string;
+  cities?: string[];
+  countries?: string[];
+  status?: 'pending' | 'active' | 'suspended';
 }

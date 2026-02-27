@@ -34,7 +34,7 @@ const Header = ({ title, showMobileSidebar = true }: HeaderProps) => {
   return (
     <header
       id="dashboard-header"
-      className={`fixed top-0 left-0 right-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4 transition-shadow duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 px-3 pt-3 sm:px-4 sm:pt-4 transition-shadow duration-300 ${
         elevated ? "shadow-2xl" : ""
       }`}
     >
@@ -42,7 +42,7 @@ const Header = ({ title, showMobileSidebar = true }: HeaderProps) => {
       <div className="absolute inset-x-0 top-0 h-4 bg-white" />
 
       {/* Main container */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl">
+      <div className="relative rounded-2xl sm:rounded-3xl" style={{ clipPath: 'inset(0 round 1rem)' }}>
         {/* Background image */}
         <img
           src={HeaderBg}

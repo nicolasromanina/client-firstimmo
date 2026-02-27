@@ -146,6 +146,20 @@ export const partnerService = {
     const data: any = await request({ url: '/api/partners', method: 'get', params });
     return Array.isArray(data) ? data : data.partners || [];
   },
+
+  getPartner: async (id: string): Promise<Partner> => {
+    const data: any = await request({ url: `/api/partners/${id}`, method: 'get' });
+    return data?.partner || data;
+  },
+
+  createContactRequest: async (data: {
+    type: string;
+    description: string;
+    preferredPartnerId?: string;
+    projectId?: string;
+  }): Promise<any> => {
+    return await request({ url: '/api/partners/request', method: 'post', data });
+  },
 };
 
 // ===== Documents =====
@@ -245,6 +259,8 @@ export const documentService = {
         _id: doc._id || doc.id,
         name: doc.name || 'Document',
         type: doc.type === 'image' ? 'image' : doc.type === 'doc' ? 'doc' : 'pdf',
+        category: doc.category,
+        tags: Array.isArray(doc.tags) ? doc.tags : [],
         url: doc.url,
         projectId: doc.projectId,
         projectName: doc.projectName,
