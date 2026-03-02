@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/api';
 import { useWebSocket } from './useWebSocket';
+import { useAuth } from './useAuth';
 import { chatService } from '@/lib/services';
 
 export interface Conversation {
@@ -42,6 +43,7 @@ export function useChat() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const { isConnected } = useWebSocket();
+  const { user } = useAuth();
   const socketRef = useRef<any>(null);
 
   // Fetch conversations helper
@@ -136,13 +138,13 @@ export function useChat() {
       const sock: any = (window as any).__socket__;
       if (sock && sock.connected) {
         sock.emit('chat:message', { conversationId, content, type: 'text' });
-        // Optimistically add message
+        // Optimistically add message with current user ID
         const tempMsg: Message = {
           _id: `temp-${Date.now()}`,
           conversation: conversationId,
           sender: {
-            _id: 'current-user',
-            email: 'Vous',
+            _id: user?.id || 'unknown',
+            email: user?.email || 'Vous',
           },
           content,
           type: 'text',

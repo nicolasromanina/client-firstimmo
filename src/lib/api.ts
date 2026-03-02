@@ -8,6 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,  // ✅ Send/receive cookies across subdomains
 });
 
 // Intercepteur pour ajouter le token JWT

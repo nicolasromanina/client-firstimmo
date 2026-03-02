@@ -35,7 +35,7 @@ const ChatList: React.FC<Props> = ({ conversations, onOpen, selectedId }) => {
 
   const getOtherParticipant = (conversation: Conversation) => {
     const other = conversation.participants.find(
-      (p) => p.user._id !== user?.id
+      (p) => p.user && p.user._id !== user?.id
     );
     return other?.user;
   };
