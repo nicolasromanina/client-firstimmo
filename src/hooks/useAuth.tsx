@@ -11,6 +11,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const isLocalHost = (host: string): boolean =>
+  host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost');
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,13 +34,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Récupérer le token depuis l'URL (redirection cross-origin depuis auth)
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('token');
-    if (urlToken) {
-      localStorage.setItem('token', urlToken);
-      window.history.replaceState({}, '', window.location.pathname);
+    // Local fallback: accept ?token=... after auth redirect on localhost only.
+    if (isLocalHost(window.location.hostname)) {
+      const params = new URLSearchParams(window.location.search);
+      const urlToken = params.get('token');
+      if (urlToken) {
+        localStorage.setItem('token', urlToken);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     }
+
     loadProfile();
   }, []);
 

@@ -12,13 +12,7 @@ const AcceptInvitationRedirect = () => {
       return;
     }
 
-    const localToken = localStorage.getItem("token");
     const destination = new URL(`/accept-invitation/${token}`, PROMOTEUR_URL);
-
-    if (localToken) {
-      destination.searchParams.set("token", localToken);
-    }
-
     window.location.replace(destination.toString());
   }, [token]);
 

@@ -1,30 +1,36 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const AUTH_URL = import.meta.env.VITE_AUTH_URL || 'http://localhost:8080';
+
+const isLocalHost = (host: string): boolean =>
+  host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost');
+
+const shouldUseCookieOnlyAuth = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return !isLocalHost(window.location.hostname);
+};
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,  // ✅ Send/receive cookies across subdomains
+  withCredentials: true,
 });
 
-// Intercepteur pour ajouter le token JWT
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!shouldUseCookieOnlyAuth()) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Intercepteur pour gérer les erreurs d'authentification
-// NE PAS rediriger ici — laisser useAuth gérer la redirection
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -36,19 +42,22 @@ api.interceptors.response.use(
   }
 );
 
-// Fonction helper pour les uploads de fichiers (FormData)
 export const uploadFile = async (url: string, formData: FormData, method: 'PUT' | 'POST' = 'POST') => {
-  const token = localStorage.getItem('token');
-  const headers: any = {
-    Authorization: token ? `Bearer ${token}` : '',
-    // Ne pas définir Content-Type pour FormData - laisser le navigateur gérer
-  };
-  
+  const headers: any = {};
+
+  if (!shouldUseCookieOnlyAuth()) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
   return axios.request({
     method,
     url: `${API_URL}${url}`,
     data: formData,
     headers,
+    withCredentials: true,
   });
 };
 
