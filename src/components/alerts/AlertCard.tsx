@@ -106,7 +106,7 @@ export const AlertCard = ({
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Canaux:</span>
             <div className="flex gap-2">
-              {alert.channels.map((channel) => (
+              {(alert.channels || []).map((channel) => (
                 <Badge key={channel} variant="secondary" className="gap-1">
                   {getChannelIcon(channel)}
                   <span className="capitalize">{channel}</span>

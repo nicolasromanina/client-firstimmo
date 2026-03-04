@@ -40,6 +40,46 @@ const ProfileEdit = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const userClientProfile = user?.clientProfile;
+
+  const normalizePaymentMode = (value: string | undefined): string => {
+    const raw = String(value || "").trim().toLowerCase();
+    if (raw === "crédit" || raw === "credit") return "credit";
+    if (raw === "comptant") return "comptant";
+    return "comptant";
+  };
+
+  const normalizeDejaInvesti = (value: unknown): "oui" | "non" => {
+    if (value === true || String(value || "").toLowerCase() === "oui") return "oui";
+    if (value === false || String(value || "").toLowerCase() === "non") return "non";
+    return "oui";
+  };
+
+  const normalizeObjectifs = (values: unknown): string[] => {
+    if (!Array.isArray(values)) return [];
+    const mapped = values.map((v) => {
+      const raw = String(v || "").trim().toLowerCase();
+      if (raw.includes("invest")) return "Investissement";
+      if (raw.includes("princip")) return "Residence principale";
+      if (raw.includes("second")) return "Residence secondaire";
+      return String(v || "").trim();
+    });
+    return Array.from(new Set(mapped.filter(Boolean)));
+  };
+
+  const normalizeAccompagnements = (values: unknown): string[] => {
+    if (!Array.isArray(values)) return [];
+    const mapped = values.map((v) => {
+      const raw = String(v || "").trim().toLowerCase();
+      if (raw.includes("soc") && raw.includes("btp")) return "Societe BTP";
+      if (raw === "non je ne souhaite pas etre accompagne" || raw === "non") return "Non";
+      if (raw.includes("notaire")) return "Notaire";
+      if (raw.includes("avocat")) return "Avocat";
+      if (raw.includes("architect")) return "Architecte";
+      return String(v || "").trim();
+    });
+    return Array.from(new Set(mapped.filter(Boolean)));
+  };
 
   const validateNom = (value: string): string | null => {
     const v = value.trim();
@@ -122,21 +162,23 @@ const ProfileEdit = () => {
 
   // Pré-remplir le formulaire avec les données utilisateur et profil
   useEffect(() => {
+    const objectifs = normalizeObjectifs(profile?.objectif ?? userClientProfile?.objectif);
+    const accompagnements = normalizeAccompagnements(profile?.accompagnements ?? userClientProfile?.accompagnements);
     setFormData((prev) => ({
       ...prev,
       nom: user?.lastName || prev.nom,
       prenom: user?.firstName || prev.prenom,
       email: user?.email || prev.email,
-      telephone: user?.phone || profile?.phone || prev.telephone,
-      address: profile?.address || prev.address,
-      residence: profile?.residence || prev.residence,
-      objectif: profile?.objectif || prev.objectif,
-      modePaiement: profile?.modePaiement || prev.modePaiement,
-      dejaInvesti: profile?.dejaInvesti === true ? 'oui' : profile?.dejaInvesti === false ? 'non' : (profile?.dejaInvesti as string) || prev.dejaInvesti,
-      aversionRisque: profile?.aversionRisque || prev.aversionRisque,
-      accompagnements: profile?.accompagnements || prev.accompagnements,
+      telephone: profile?.phone || user?.phone || prev.telephone,
+      address: profile?.address || userClientProfile?.address || prev.address,
+      residence: profile?.residence || userClientProfile?.residence || prev.residence,
+      objectif: objectifs.length > 0 ? objectifs : prev.objectif,
+      modePaiement: normalizePaymentMode(profile?.modePaiement ?? userClientProfile?.modePaiement ?? prev.modePaiement),
+      dejaInvesti: normalizeDejaInvesti(profile?.dejaInvesti ?? userClientProfile?.dejaInvesti ?? prev.dejaInvesti),
+      aversionRisque: profile?.aversionRisque || userClientProfile?.aversionRisque || prev.aversionRisque,
+      accompagnements: accompagnements.length > 0 ? accompagnements : prev.accompagnements,
     }));
-  }, [user, profile]);
+  }, [user, profile, userClientProfile]);
 
   // Handler pour les checkboxes
   const handleCheckbox = (field: "objectif" | "accompagnements", value: string) => {
@@ -217,11 +259,11 @@ const ProfileEdit = () => {
         phone: formData.telephone,
         address: formData.address,
         residence: formData.residence,
-        objectif: formData.objectif,
-        modePaiement: formData.modePaiement,
+        objectif: normalizeObjectifs(formData.objectif),
+        modePaiement: normalizePaymentMode(formData.modePaiement),
         dejaInvesti: dejaInvestiValue as any,
         aversionRisque: formData.aversionRisque,
-        accompagnements: formData.accompagnements,
+        accompagnements: normalizeAccompagnements(formData.accompagnements),
       });
       refreshProfile();
       toast.success('Profil mis à jour avec succès');
@@ -450,7 +492,7 @@ const ProfileEdit = () => {
               Qu'est-ce que vous recherchez ?
             </label>
             <div className="flex flex-wrap gap-4">
-              {["Investissement", "Résidence principale", "Résidence secondaire"].map((option) => (
+              {["Investissement", "Residence principale", "Residence secondaire"].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -472,7 +514,7 @@ const ProfileEdit = () => {
                 Mode de paiement
               </label>
               <div className="flex gap-6">
-                {["Comptant", "Crédit"].map((option) => (
+                {["Comptant", "Credit"].map((option) => (
                   <label key={option} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
@@ -557,8 +599,8 @@ const ProfileEdit = () => {
                 "Notaire",
                 "Avocat",
                 "Architecte",
-                "Société BTP",
-                "Non je ne souhaite pas être accompagné",
+                "Societe BTP",
+                "Non",
               ].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
                   <input

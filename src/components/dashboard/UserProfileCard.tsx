@@ -17,13 +17,17 @@ import { useClientProfile } from "@/hooks/useApi";
 const UserProfileCard = () => {
   const { user } = useAuth();
   const { data: profile } = useClientProfile();
+  const userClientProfile = user?.clientProfile;
 
   const displayName = user?.firstName
     ? `${user.firstName} ${user.lastName ?? ''}`.trim()
     : user?.email?.split('@')[0] ?? 'Utilisateur';
 
-  const riskLabel = profile?.aversionRisque || 'Risque moyen';
-  const accompagnementCount = profile?.accompagnements?.length ?? 0;
+  const riskLabel = profile?.aversionRisque || userClientProfile?.aversionRisque || 'Risque moyen';
+  const accompagnementCount =
+    profile?.accompagnements?.length ?? userClientProfile?.accompagnements?.length ?? 0;
+  const paiementRaw = String(profile?.modePaiement || userClientProfile?.modePaiement || '').toLowerCase();
+  const paiementLabel = paiementRaw === 'comptant' ? 'Comptant' : paiementRaw === 'credit' || paiementRaw === 'crédit' ? 'Crédit' : 'Crédit';
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
@@ -57,7 +61,7 @@ const UserProfileCard = () => {
           <div className="w-6 h-6  rounded flex items-center justify-center">
             <img src={credit} alt="Credit" className="w-4 h-4" />
           </div>
-          <span className="text-sm text-slate-700">{profile?.modePaiement === 'crédit' ? 'Crédit' : 'Credit'}</span>
+          <span className="text-sm text-slate-700">{paiementLabel}</span>
         </div>
 
         {/* Risque moyen */}

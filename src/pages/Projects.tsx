@@ -305,15 +305,26 @@ export default function Projects() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <h1 className="text-2xl font-bold text-slate-900 text-center">
-          Découvrir les projets
-        </h1>
+        <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/60 to-amber-50/40 p-6 sm:p-8">
+          <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-sky-200/30 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-amber-200/30 blur-3xl pointer-events-none" />
+          <div className="relative z-10">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              Decouvrir les projets
+            </h1>
+            <p className="text-sm text-slate-600 mt-2">
+              Recherche intelligente, filtres precis et tri rapide pour trouver le bon projet.
+            </p>
+          </div>
+        </section>
 
-        <ProjectSearchFilters
-          params={searchParams}
-          onChange={setSearchParams}
-          resultCount={total}
-        />
+        <div className="sticky top-3 z-20">
+          <ProjectSearchFilters
+            params={searchParams}
+            onChange={setSearchParams}
+            resultCount={total}
+          />
+        </div>
 
         {/* Section Mis en avant (boostés) */}
         {sponsored.length > 0 && !hasActiveSearch && (
@@ -368,6 +379,11 @@ export default function Projects() {
           <h2 className="text-lg font-semibold text-slate-900 mb-4">
             {hasActiveSearch ? "Résultats" : "Tous les projets"}
           </h2>
+          {!isLoading && (
+            <p className="text-sm text-slate-500 mb-3">
+              {total} projet{total > 1 ? "s" : ""} disponible{total > 1 ? "s" : ""}.
+            </p>
+          )}
 
           {isLoading ? (
             <div className="flex justify-center py-12">

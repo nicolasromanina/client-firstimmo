@@ -15,11 +15,18 @@ export const authService = {
     return response.data;
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:8080';
-    window.location.href = `${authUrl}/connexion`;
+  logout: async () => {
+    try {
+      await api.post('/api/auth/logout');
+    } catch {
+      // ignore network/backend errors and still clear local auth state
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
+      const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:8080';
+      window.location.href = `${authUrl}/connexion`;
+    }
   },
 
   getToken: (): string | null => {

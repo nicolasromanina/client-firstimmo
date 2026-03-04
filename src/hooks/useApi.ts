@@ -13,6 +13,7 @@ import {
   reportService,
   chatService,
   priceAnalyticsService,
+  consultedProjectsService,
 } from '@/lib/services';
 import type { Alert } from '@/lib/types';
 
@@ -54,6 +55,15 @@ export const usePublicProjects = (params?: {
   return useQuery({
     queryKey: ['projects', 'public', params],
     queryFn: () => projectService.getPublicProjects(params),
+    staleTime: 30_000,
+  });
+};
+
+// ===== Consulted Projects =====
+export const useConsultedProjects = (params?: { page?: number; limit?: number }) => {
+  return useQuery({
+    queryKey: ['client', 'consulted-projects', params],
+    queryFn: () => consultedProjectsService.getConsultedProjects(params),
     staleTime: 30_000,
   });
 };
@@ -165,7 +175,7 @@ export const useCreateBecomePromoteurCheckout = () => {
 };
 
 // ===== Alerts =====
-export const useAlerts = (params?: { isRead?: boolean }) => {
+export const useAlerts = (params?: { isRead?: boolean; isActive?: boolean; type?: Alert['type']; frequency?: Alert['frequency'] }) => {
   return useQuery({
     queryKey: ['client', 'alerts', params],
     queryFn: () => alertService.getMyAlerts(params),

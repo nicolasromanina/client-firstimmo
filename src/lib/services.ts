@@ -122,6 +122,18 @@ export const favoriteService = {
   },
 };
 
+// ===== Consulted Projects (View History) =====
+export const consultedProjectsService = {
+  getConsultedProjects: async (params?: { page?: number; limit?: number }): Promise<any> => {
+    const data: any = await request({
+      url: '/api/client/consulted-projects',
+      method: 'get',
+      params,
+    });
+    return data;
+  },
+};
+
 // ===== Notifications =====
 export const notificationService = {
   getNotifications: async (): Promise<Notification[]> => {
@@ -302,7 +314,7 @@ export const reportService = {
 
 // ===== Alerts =====
 export const alertService = {
-  getMyAlerts: async (params?: { isRead?: boolean }): Promise<Alert[]> => {
+  getMyAlerts: async (params?: { isRead?: boolean; isActive?: boolean; type?: Alert['type']; frequency?: Alert['frequency'] }): Promise<Alert[]> => {
     const data: any = await request({ url: '/api/alerts/my-alerts', method: 'get', params });
     return Array.isArray(data) ? data : data.data || [];
   },

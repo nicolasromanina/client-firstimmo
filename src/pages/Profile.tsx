@@ -20,6 +20,7 @@ import { useClientProfile } from "@/hooks/useApi";
 const Profile = () => {
   const { user } = useAuth();
   const { data: profile } = useClientProfile();
+  const userClientProfile = user?.clientProfile;
 
   const firstName = profile?.firstName || user?.firstName || "";
   const lastName = profile?.lastName || user?.lastName || "";
@@ -27,11 +28,12 @@ const Profile = () => {
 
   const userEmail = profile?.email || user?.email || "Non renseigné";
   const userPhone = profile?.phone || user?.phone || "Non renseigné";
-  const userAddress = profile?.address || "Non renseignée";
-  const residence = profile?.residence || "Non renseignée";
+  const userAddress = profile?.address || userClientProfile?.address || "Non renseignée";
+  const residence = profile?.residence || userClientProfile?.residence || "Non renseignée";
 
-  const objectifs = Array.isArray(profile?.objectif) && profile.objectif.length > 0 ? profile.objectif : ["Non renseigné"];
-  const paiementRaw = String(profile?.modePaiement || "").toLowerCase();
+  const objectifsSource = profile?.objectif ?? userClientProfile?.objectif;
+  const objectifs = Array.isArray(objectifsSource) && objectifsSource.length > 0 ? objectifsSource : ["Non renseigné"];
+  const paiementRaw = String(profile?.modePaiement || userClientProfile?.modePaiement || "").toLowerCase();
   const paiementLabel =
     paiementRaw === "credit" || paiementRaw === "crédit"
       ? "Crédit"
@@ -39,7 +41,7 @@ const Profile = () => {
       ? "Comptant"
       : "Non renseigné";
 
-  const investiValue = profile?.dejaInvesti as any;
+  const investiValue = (profile?.dejaInvesti ?? userClientProfile?.dejaInvesti) as any;
   const investiLabel =
     investiValue === "oui" || investiValue === true
       ? "Déjà investi"
@@ -47,10 +49,11 @@ const Profile = () => {
       ? "Pas encore"
       : "Non renseigné";
 
-  const riskLabel = profile?.aversionRisque || "Non renseigné";
+  const riskLabel = profile?.aversionRisque || userClientProfile?.aversionRisque || "Non renseigné";
+  const accompagnementsSource = profile?.accompagnements ?? userClientProfile?.accompagnements;
   const accompagnements =
-    Array.isArray(profile?.accompagnements) && profile.accompagnements.length > 0
-      ? profile.accompagnements
+    Array.isArray(accompagnementsSource) && accompagnementsSource.length > 0
+      ? accompagnementsSource
       : ["Non renseigné"];
 
   return (

@@ -22,6 +22,15 @@ export interface ProfileResponse {
   lastName?: string;
   phone?: string;
   avatar?: string;
+  clientProfile?: {
+    objectif?: string[];
+    modePaiement?: string;
+    dejaInvesti?: boolean;
+    aversionRisque?: string;
+    accompagnements?: string[];
+    address?: string;
+    residence?: string;
+  };
 }
 
 // ===== Client Profile =====

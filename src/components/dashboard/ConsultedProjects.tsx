@@ -1,20 +1,32 @@
 import ProjectCard from "./ProjectCard";
 import projectImmeuble from "@/assets/consulted-project-1.png";
-import projectResidence from "@/assets/consulted-project-2.png";
-import { useFavorites } from "@/hooks/useApi";
+import { useConsultedProjects } from "@/hooks/useApi";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
+
 /**
  * ConsultedProjects Component
- * Section affichant les projets récemment consultés (favoris)
- * Avec bouton pour voir tous les projets
+ * Section affichant les projets récemment consultés (historique de vues)
  */
 
+const formatTimeAgo = (dateStr: string): string => {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'À l\'instant';
+  if (diffMins < 60) return `Il y a ${diffMins} min`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `Il y a ${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'Hier';
+  return `Il y a ${diffDays} jours`;
+};
+
 const ConsultedProjects = () => {
-  const { data: favorites } = useFavorites();
+  const { data, isLoading } = useConsultedProjects({ limit: 4 });
   const navigate = useNavigate();
 
-  const hasProjects = favorites && favorites.length > 0;
+  const consultedProjects = data?.consultedProjects || [];
+  const hasProjects = consultedProjects.length > 0;
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
@@ -23,26 +35,38 @@ const ConsultedProjects = () => {
         Projets Consultés
       </h3>
 
-      {hasProjects ? (
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+        </div>
+      ) : hasProjects ? (
         <>
           {/* Liste des projets */}
           <div className="divide-y divide-slate-100">
-            {favorites?.slice(0, 4).map((fav: any) => (
-              <ProjectCard
-                key={fav._id || fav.id}
-                id={fav._id || fav.id}
-                image={fav.project?.images?.[0] || fav.project?.image || projectImmeuble}
-                title={fav.project?.name || fav.project?.title || 'Projet'}
-                description={fav.project?.description || 'Description du projet'}
-                location={fav.project?.location || fav.project?.city || 'Localisation'}
-                priceRange={fav.project?.priceRange || 'Prix sur demande'}
-                visitDate={
-                  fav.createdAt
-                    ? `Consulté il y a ${Math.max(1, Math.floor((Date.now() - new Date(fav.createdAt).getTime()) / 86400000))} jours`
-                    : 'Consulté récemment'
-                }
-              />
-            ))}
+            {consultedProjects.map((item: any) => {
+              const project = item.project;
+              if (!project) return null;
+              const coverImage = project.media?.coverImage
+                || project.images?.[0]
+                || project.image
+                || projectImmeuble;
+              return (
+                <ProjectCard
+                  key={project._id}
+                  id={project._id}
+                  image={typeof coverImage === 'string' ? coverImage : coverImage?.url || projectImmeuble}
+                  title={project.title || project.name || 'Projet'}
+                  description={project.shortDescription || project.description || ''}
+                  location={project.city || project.location || project.area || ''}
+                  priceRange={
+                    project.priceFrom
+                      ? `À partir de ${project.priceFrom.toLocaleString('fr-FR')} ${project.currency || 'XOF'}`
+                      : 'Prix sur demande'
+                  }
+                  visitDate={formatTimeAgo(item.lastViewedAt)}
+                />
+              );
+            })}
           </div>
 
           {/* Bouton voir tous les projets */}
@@ -51,7 +75,7 @@ const ConsultedProjects = () => {
               onClick={() => navigate('/projets')}
               className="bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 px-8 rounded-full transition-colors"
             >
-              Voir tous les projets consultés
+              Voir tous les projets
             </button>
           </div>
         </>

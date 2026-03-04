@@ -76,7 +76,7 @@ export default function Comparer() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Sélectionnez 2 ou 3 projets</CardTitle>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-white">
               Recherchez des projets puis ajoutez-les à la comparaison. Vous pouvez comparer au maximum 3 projets.
             </p>
           </CardHeader>
@@ -91,7 +91,7 @@ export default function Comparer() {
 
             {selectedIds.length > 0 && (
               <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-sm font-medium text-slate-600">Sélectionnés:</span>
+                <span className="text-sm font-medium text-slate-600 dark:text-white">Sélectionnés:</span>
                 {selectedProjects.map((p) => (
                   <Badge
                     key={p._id}
@@ -109,7 +109,7 @@ export default function Comparer() {
                     </button>
                   </Badge>
                 ))}
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-500 dark:text-white">
                   ({selectedIds.length}/{MAX_PROJECTS})
                 </span>
               </div>
@@ -121,7 +121,7 @@ export default function Comparer() {
                   <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
                 </div>
               ) : projects.length === 0 ? (
-                <div className="py-8 text-center text-slate-500 text-sm">
+                <div className="py-8 text-center text-slate-500 text-sm dark:text-white">
                   {searchTerm ? "Aucun projet trouvé. Modifiez la recherche." : "Saisissez une recherche pour afficher des projets."}
                 </div>
               ) : (
@@ -132,13 +132,13 @@ export default function Comparer() {
                     <div
                       key={p._id}
                       className={cn(
-                        "flex items-center justify-between p-4 hover:bg-slate-50 transition-colors",
+                        "group flex items-center justify-between p-4 hover:bg-slate-50 transition-colors",
                         selected && "bg-sky-50"
                       )}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-900 truncate">{p.title}</p>
-                        <p className="text-sm text-slate-500">
+                        <p className="font-medium text-slate-900 dark:text-white group-hover:text-black truncate">{p.title}</p>
+                        <p className="text-sm text-slate-500 dark:text-white group-hover:text-black">
                           {p.area || p.city || "—"} · {formatPrice(p.priceFrom, p.currency).display}
                           {p.trustScore != null && ` · Score ${p.trustScore}`}
                         </p>
@@ -159,7 +159,7 @@ export default function Comparer() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Note (optionnel)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-white">Note (optionnel)</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}

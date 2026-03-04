@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,10 +11,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, SlidersHorizontal, X, Check } from "lucide-react";
+import { Search, SlidersHorizontal, X, Check, Sparkles } from "lucide-react";
 import type { ProjectSearchParams } from "@/lib/services";
 import { cn } from "@/lib/utils";
-import { convertFilterPriceToBackend, convertBackendPriceToFilter } from "@/lib/currency";
 
 interface ProjectSearchFiltersProps {
   params: ProjectSearchParams;
@@ -49,6 +48,21 @@ export function ProjectSearchFilters({
     deliveryBefore: params.deliveryBefore ?? "",
     verifiedOnly: params.verifiedOnly ?? false,
   });
+  const [priceError, setPriceError] = useState("");
+
+  useEffect(() => {
+    setSearchInput(params.search ?? "");
+    setLocalFilters({
+      country: params.country ?? "",
+      city: params.city ?? "",
+      projectType: params.projectType ?? ("" as "" | "villa" | "immeuble"),
+      minPrice: params.minPrice ?? "",
+      maxPrice: params.maxPrice ?? "",
+      minScore: params.minScore ?? "",
+      deliveryBefore: params.deliveryBefore ?? "",
+      verifiedOnly: params.verifiedOnly ?? false,
+    });
+  }, [params]);
 
   const applySearch = () => {
     onChange({
@@ -59,16 +73,26 @@ export function ProjectSearchFilters({
   };
 
   const applyFilters = () => {
-    // Convertir les prix EUR saisis par l'utilisateur vers la devise backend si nécessaire
-    // Note: Le backend attend probablement les prix dans sa devise native
-    // Pour l'instant, on envoie en EUR et le backend gère la conversion si besoin
+    const minValue = localFilters.minPrice ? Number(localFilters.minPrice) : undefined;
+    const maxValue = localFilters.maxPrice ? Number(localFilters.maxPrice) : undefined;
+    if (
+      minValue != null &&
+      maxValue != null &&
+      !Number.isNaN(minValue) &&
+      !Number.isNaN(maxValue) &&
+      minValue > maxValue
+    ) {
+      setPriceError("Le budget minimum ne peut pas etre superieur au budget maximum.");
+      return;
+    }
+    setPriceError("");
     onChange({
       ...params,
       country: localFilters.country || undefined,
       city: localFilters.city || undefined,
       projectType: localFilters.projectType || undefined,
-      minPrice: localFilters.minPrice ? Number(localFilters.minPrice) : undefined,
-      maxPrice: localFilters.maxPrice ? Number(localFilters.maxPrice) : undefined,
+      minPrice: minValue,
+      maxPrice: maxValue,
       minScore: localFilters.minScore ? Number(localFilters.minScore) : undefined,
       deliveryBefore: localFilters.deliveryBefore || undefined,
       verifiedOnly: localFilters.verifiedOnly || undefined,
@@ -105,11 +129,63 @@ export function ProjectSearchFilters({
     params.deliveryBefore ||
     params.verifiedOnly;
 
+  const activeFilterBadges = useMemo(() => {
+    const badges: Array<{ key: string; label: string }> = [];
+    if (params.search) badges.push({ key: "search", label: `Recherche: ${params.search}` });
+    if (params.country) badges.push({ key: "country", label: `Pays: ${params.country}` });
+    if (params.city) badges.push({ key: "city", label: `Ville: ${params.city}` });
+    if (params.projectType) {
+      badges.push({
+        key: "projectType",
+        label: `Type: ${params.projectType === "villa" ? "Villa" : "Immeuble"}`,
+      });
+    }
+    if (params.minPrice != null) badges.push({ key: "minPrice", label: `Min: ${params.minPrice.toLocaleString("fr-FR")} EUR` });
+    if (params.maxPrice != null) badges.push({ key: "maxPrice", label: `Max: ${params.maxPrice.toLocaleString("fr-FR")} EUR` });
+    if (params.minScore != null) badges.push({ key: "minScore", label: `Score >= ${params.minScore}` });
+    if (params.deliveryBefore) badges.push({ key: "deliveryBefore", label: `Livraison: ${params.deliveryBefore}` });
+    if (params.verifiedOnly) badges.push({ key: "verifiedOnly", label: "Verifies uniquement" });
+    return badges;
+  }, [params]);
+
+  const removeFilter = (key: string) => {
+    const next: ProjectSearchParams = { ...params, page: 1 };
+    if (key === "search") {
+      delete next.search;
+      setSearchInput("");
+    } else if (key === "country") {
+      delete next.country;
+      setLocalFilters((p) => ({ ...p, country: "" }));
+    } else if (key === "city") {
+      delete next.city;
+      setLocalFilters((p) => ({ ...p, city: "" }));
+    } else if (key === "projectType") {
+      delete next.projectType;
+      setLocalFilters((p) => ({ ...p, projectType: "" }));
+    } else if (key === "minPrice") {
+      delete next.minPrice;
+      setLocalFilters((p) => ({ ...p, minPrice: "" }));
+    } else if (key === "maxPrice") {
+      delete next.maxPrice;
+      setLocalFilters((p) => ({ ...p, maxPrice: "" }));
+    } else if (key === "minScore") {
+      delete next.minScore;
+      setLocalFilters((p) => ({ ...p, minScore: "" }));
+    } else if (key === "deliveryBefore") {
+      delete next.deliveryBefore;
+      setLocalFilters((p) => ({ ...p, deliveryBefore: "" }));
+    } else if (key === "verifiedOnly") {
+      delete next.verifiedOnly;
+      setLocalFilters((p) => ({ ...p, verifiedOnly: false }));
+    }
+    onChange(next);
+  };
+
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn("w-full border-slate-200 shadow-sm bg-gradient-to-b from-white to-slate-50/40", className)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
-          <Search className="w-5 h-5" />
+          <Sparkles className="w-5 h-5 text-amber-500" />
           Recherche et filtres
         </CardTitle>
         {resultCount != null && (
@@ -167,6 +243,27 @@ export function ProjectSearchFilters({
             <span className="text-sm">Vérifiés uniquement</span>
           </label>
         </div>
+
+        {activeFilterBadges.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {activeFilterBadges.map((badge) => (
+              <span
+                key={badge.key}
+                className="inline-flex items-center gap-1 rounded-full bg-slate-900 text-white text-xs px-3 py-1"
+              >
+                {badge.label}
+                <button
+                  type="button"
+                  onClick={() => removeFilter(badge.key)}
+                  className="rounded-full hover:bg-white/20 p-0.5"
+                  aria-label={`Retirer le filtre ${badge.label}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Filtres avancés */}
         <div>
@@ -292,6 +389,9 @@ export function ProjectSearchFilters({
                   Réinitialiser
                 </Button>
               </div>
+              {priceError && (
+                <p className="text-xs text-red-600 sm:col-span-2 lg:col-span-3">{priceError}</p>
+              )}
             </div>
           )}
         </div>

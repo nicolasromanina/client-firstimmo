@@ -159,9 +159,9 @@ export default function ComparisonDetail() {
 
         {/* Détail par critère */}
         {Object.keys(insights).length > 0 && (
-          <Card>
+          <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-900">
             <CardHeader>
-              <CardTitle className="text-lg">Détail par critère</CardTitle>
+              <CardTitle className="text-lg text-slate-900 dark:text-slate-100">Détail par critère</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
@@ -177,11 +177,11 @@ export default function ComparisonDetail() {
                   return (
                     <li
                       key={key}
-                      className="flex justify-between items-center gap-3 py-2 px-3 rounded-md border border-slate-100 bg-slate-50"
+                      className="flex justify-between items-center gap-3 py-2 px-3 rounded-md border border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/70"
                     >
-                      <span className="text-slate-600">{label}</span>
-                      <span className={`font-semibold text-right ${isWinner ? "text-amber-600" : "text-slate-900"}`}>
-                        {isWinner && <Trophy className="w-3 h-3 inline mr-1 text-amber-500" />}
+                      <span className="text-slate-600 dark:text-slate-300">{label}</span>
+                      <span className={`font-semibold text-right ${isWinner ? "text-amber-600 dark:text-amber-300" : "text-slate-900 dark:text-slate-100"}`}>
+                        {isWinner && <Trophy className="w-3 h-3 inline mr-1 text-amber-500 dark:text-amber-300" />}
                         {name}
                       </span>
                     </li>

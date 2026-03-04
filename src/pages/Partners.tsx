@@ -8,6 +8,13 @@ import localisationIcon from "@/assets/localisation-icon.svg";
 import callIcon from "@/assets/call.svg";
 import { useCreatePartnerContactRequest, usePartners } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PartnerCard {
   id: string;
@@ -52,6 +59,8 @@ const filterTypeMap: Record<FilterCategory, string | undefined> = {
 const Partners = () => {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("all");
   const [openedPartnerId, setOpenedPartnerId] = useState<string | null>(null);
+  const [contactTarget, setContactTarget] = useState<PartnerCard | null>(null);
+  const [isCreatingRequestFor, setIsCreatingRequestFor] = useState<string | null>(null);
   const { toast } = useToast();
 
   const partnerType = filterTypeMap[activeFilter];
@@ -86,34 +95,51 @@ const Partners = () => {
   }, [apiPartners]);
 
   const handleContact = async (partner: PartnerCard) => {
+    setIsCreatingRequestFor(partner.id);
     try {
       await createContactRequest.mutateAsync({
         type: partner.backendType || "autre",
         preferredPartnerId: partner.id,
         description: `Demande de contact envoyee depuis /partenaires pour ${partner.name}`,
       });
-    } catch {
-      // Keep UX working even if request endpoint fails for some profiles.
+      toast({
+        title: "Demande enregistree",
+        description: "Votre demande a ete envoyee. Choisissez maintenant un canal de contact.",
+      });
+      if (!partner.phone && !partner.email && !partner.website) {
+        toast({
+          title: "Contact indisponible",
+          description: "Ce partenaire n'a pas encore de canal de contact configure.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setContactTarget(partner);
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible d'envoyer la demande de contact.",
+        variant: "destructive",
+      });
+      return;
+    } finally {
+      setIsCreatingRequestFor(null);
     }
+  };
 
-    if (partner.phone) {
-      window.open(`tel:${partner.phone}`, "_self");
-      return;
+  const openContactChannel = (channel: "phone" | "email" | "website") => {
+    if (!contactTarget) return;
+    if (channel === "phone" && contactTarget.phone) {
+      window.open(`tel:${contactTarget.phone}`, "_self");
+    } else if (channel === "email" && contactTarget.email) {
+      window.open(
+        `mailto:${contactTarget.email}?subject=Demande%20de%20contact%20First%20Immo`,
+        "_self"
+      );
+    } else if (channel === "website" && contactTarget.website) {
+      window.open(contactTarget.website, "_blank", "noopener,noreferrer");
     }
-    if (partner.email) {
-      window.open(`mailto:${partner.email}?subject=Demande%20de%20contact%20First%20Immo`, "_self");
-      return;
-    }
-    if (partner.website) {
-      window.open(partner.website, "_blank", "noopener,noreferrer");
-      return;
-    }
-
-    toast({
-      title: "Contact indisponible",
-      description: "Ce partenaire n'a pas encore de canal de contact configure.",
-      variant: "destructive",
-    });
+    setContactTarget(null);
   };
 
   const filters: { key: FilterCategory; label: string; color: string; activeColor: string }[] = [
@@ -221,9 +247,10 @@ const Partners = () => {
                       </button>
                       <button
                         onClick={() => handleContact(partner)}
+                        disabled={isCreatingRequestFor === partner.id}
                         className="rounded-full bg-red-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
                       >
-                        Contacter
+                        {isCreatingRequestFor === partner.id ? "Envoi..." : "Contacter"}
                       </button>
                     </div>
                   </div>
@@ -233,6 +260,58 @@ const Partners = () => {
           )}
         </div>
       </div>
+
+      <Dialog open={!!contactTarget} onOpenChange={(open) => !open && setContactTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choisissez un canal de contact</DialogTitle>
+            <DialogDescription>
+              Demande envoyee pour <strong>{contactTarget?.name}</strong>. Selectionnez le canal a utiliser.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3 pt-2">
+            {contactTarget?.phone ? (
+              <button
+                onClick={() => openContactChannel("phone")}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:bg-slate-50"
+              >
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-900">
+                  <PhoneCall className="h-4 w-4 text-sky-600" />
+                  Appeler
+                </span>
+                <p className="mt-1 text-xs text-slate-500">{contactTarget.phone}</p>
+              </button>
+            ) : null}
+
+            {contactTarget?.email ? (
+              <button
+                onClick={() => openContactChannel("email")}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:bg-slate-50"
+              >
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-900">
+                  <Mail className="h-4 w-4 text-sky-600" />
+                  Envoyer un email
+                </span>
+                <p className="mt-1 text-xs text-slate-500">{contactTarget.email}</p>
+              </button>
+            ) : null}
+
+            {contactTarget?.website ? (
+              <button
+                onClick={() => openContactChannel("website")}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:bg-slate-50"
+              >
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-900">
+                  <Globe className="h-4 w-4 text-sky-600" />
+                  Ouvrir le site
+                </span>
+                <p className="mt-1 text-xs text-slate-500 line-clamp-1">{contactTarget.website}</p>
+              </button>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

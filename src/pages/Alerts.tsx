@@ -3,27 +3,38 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAlerts, useCreateAlert, useDeleteAlert, useToggleAlert, useMarkAlertAsRead, useMarkAllAlertsAsRead } from '@/hooks/useApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Bell, BellOff, Plus, Trash2, Check, CheckCheck, Mail, MessageSquare, Smartphone, Globe } from 'lucide-react';
+import { Bell, BellOff, Plus, Check, CheckCheck, Mail, MessageSquare, Smartphone, Globe } from 'lucide-react';
 import { AlertForm } from '@/components/alerts/AlertForm';
 import { AlertCard } from '@/components/alerts/AlertCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Alerts = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const { toast } = useToast();
   const { data: allAlerts, isLoading } = useAlerts();
-  const { data: activeAlerts } = useAlerts({ isRead: false });
+  const { data: activeAlerts } = useAlerts({ isActive: true });
   const createAlert = useCreateAlert();
   const deleteAlert = useDeleteAlert();
   const toggleAlert = useToggleAlert();
   const markAsRead = useMarkAlertAsRead();
   const markAllAsRead = useMarkAllAlertsAsRead();
 
-  const activeAlertsList = activeAlerts?.data || activeAlerts || [];
-  const allAlertsList = allAlerts?.data || allAlerts || [];
+  const activeAlertsList = Array.isArray(activeAlerts?.data) ? activeAlerts.data : (activeAlerts || []);
+  const allAlertsList = Array.isArray(allAlerts?.data) ? allAlerts.data : (allAlerts || []);
   const readAlerts = allAlertsList.filter((a: any) => a.isRead);
+  const unreadAlerts = allAlertsList.filter((a: any) => !a.isRead);
 
   const handleCreateAlert = async (data: any) => {
     try {
@@ -43,20 +54,25 @@ const Alerts = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')) {
-      try {
-        await deleteAlert.mutateAsync(id);
-        toast({
-          title: 'Alerte supprimée',
-          description: 'L\'alerte a été supprimée avec succès.',
-        });
-      } catch (error: any) {
-        toast({
-          title: 'Erreur',
-          description: error.message || 'Impossible de supprimer l\'alerte.',
-          variant: 'destructive',
-        });
-      }
+    const target = allAlertsList.find((a: any) => a._id === id) || { _id: id, title: 'cette alerte' };
+    setDeleteTarget(target);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?._id) return;
+    try {
+      await deleteAlert.mutateAsync(deleteTarget._id);
+      toast({
+        title: 'Alerte supprimée',
+        description: 'L\'alerte a été supprimée avec succès.',
+      });
+      setDeleteTarget(null);
+    } catch (error: any) {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de supprimer l\'alerte.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -150,7 +166,7 @@ const Alerts = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            {activeAlertsList.length > 0 && (
+            {unreadAlerts.length > 0 && (
               <Button
                 variant="outline"
                 onClick={handleMarkAllAsRead}
@@ -195,7 +211,7 @@ const Alerts = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {allAlertsList.filter((a: any) => !a.isRead).length}
+                {unreadAlerts.length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">Nouveautés</p>
             </CardContent>
@@ -318,6 +334,27 @@ const Alerts = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette alerte ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous allez supprimer <strong>{deleteTarget?.title || 'cette alerte'}</strong>. Cette action est definitive.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAlert.isPending}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteAlert.isPending}
+              className="bg-red-600 text-white hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleteAlert.isPending ? 'Suppression...' : 'Supprimer'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
