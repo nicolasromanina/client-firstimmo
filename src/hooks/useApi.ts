@@ -59,6 +59,15 @@ export const usePublicProjects = (params?: {
   });
 };
 
+export const useProjectUpdates = (projectId: string) => {
+  return useQuery({
+    queryKey: ['client', 'project', 'updates', projectId],
+    queryFn: () => projectService.getProjectUpdates(projectId),
+    enabled: !!projectId,
+    staleTime: 60_000,
+  });
+};
+
 // ===== Consulted Projects =====
 export const useConsultedProjects = (params?: { page?: number; limit?: number }) => {
   return useQuery({
@@ -143,7 +152,13 @@ export const useCreatePartnerContactRequest = () => {
 };
 
 // ===== Documents =====
-export const useClientDocuments = (params?: { category?: string }) => {
+export const useClientDocuments = (params?: {
+  category?: string;
+  sortBy?: 'date' | 'promoteur' | 'projet';
+  page?: number;
+  limit?: number;
+  search?: string;
+}) => {
   return useQuery({
     queryKey: ['client', 'documents', params],
     queryFn: () => documentService.getDocuments(params),

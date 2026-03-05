@@ -178,96 +178,35 @@ export const partnerService = {
 export const documentService = {
   getDocuments: async (params?: {
     category?: string;
-  }): Promise<ClientDocument[]> => {
-    const favoritesResponse: any = await request({
-      url: '/api/client/favorites',
-      method: 'get',
-      params: { limit: 100 },
-    });
-    const favorites = Array.isArray(favoritesResponse)
-      ? favoritesResponse
-      : favoritesResponse.favorites || [];
+    sortBy?: 'date' | 'promoteur' | 'projet';
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<{ documents: ClientDocument[]; total: number; hasMore: boolean }> => {
+    try {
+      // Use new backend endpoint that fetches public documents from all published projects
+      const queryParams: Record<string, any> = {
+        page: params?.page || 1,
+        limit: params?.limit || 10,
+      };
 
-    const projectMap = new Map<
-      string,
-      { title?: string; promoteurName?: string; promoteurAvatar?: string }
-    >();
-    const projectIds = Array.from(
-      new Set(
-        favorites
-          .map((favorite: any) => {
-            const project = favorite?.project;
-            const projectId =
-              typeof project === 'string'
-                ? project
-                : project?._id || favorite?.projectId;
+      if (params?.category) queryParams.category = params.category;
+      if (params?.sortBy) queryParams.sortBy = params.sortBy;
+      if (params?.search) queryParams.search = params.search;
 
-            if (projectId) {
-              projectMap.set(projectId, {
-                title: project?.title,
-                promoteurName: project?.promoteur?.organizationName,
-                promoteurAvatar: project?.promoteur?.logo,
-              });
-            }
+      const data: any = await request({
+        url: '/api/documents/published/list',
+        method: 'get',
+        params: queryParams,
+      });
 
-            return projectId;
-          })
-          .filter(Boolean)
-      )
-    ) as string[];
+      console.log('[DocumentService] Fetched documents:', {
+        count: data.documents?.length,
+        total: data.total,
+        hasMore: data.hasMore,
+      });
 
-    if (projectIds.length === 0) {
-      return [];
-    }
-
-    const categoryMap: Record<string, string[]> = {
-      plans: ['plans', 'technique'],
-      juridique: ['foncier', 'permis', 'contrats', 'financier'],
-      echanges: ['autre'],
-    };
-    const allowedCategories = params?.category ? categoryMap[params.category] || [] : [];
-
-    const byProject = await Promise.all(
-      projectIds.map(async (projectId) => {
-        try {
-          const data: any = await request({
-            url: `/api/documents/project/${projectId}`,
-            method: 'get',
-          });
-          const documents = Array.isArray(data) ? data : data.documents || [];
-          return documents.map((doc: any) => {
-            const metadata = projectMap.get(projectId);
-            return {
-              ...doc,
-              projectId,
-              projectName: metadata?.title || doc.projectName,
-              promoteurName: metadata?.promoteurName || doc.promoteurName,
-              promoteurAvatar: metadata?.promoteurAvatar || doc.promoteurAvatar,
-            };
-          });
-        } catch {
-          return [];
-        }
-      })
-    );
-
-    const flattened = byProject.flat();
-    const filtered =
-      allowedCategories.length > 0
-        ? flattened.filter((doc: any) => allowedCategories.includes(doc.category))
-        : flattened;
-
-    const uniqueById = Array.from(
-      new Map(filtered.map((doc: any) => [doc._id || doc.id, doc])).values()
-    );
-
-    return uniqueById
-      .sort((a: any, b: any) => {
-        const aTime = new Date(a.createdAt || a.uploadedAt || 0).getTime();
-        const bTime = new Date(b.createdAt || b.uploadedAt || 0).getTime();
-        return bTime - aTime;
-      })
-      .map((doc: any) => ({
+      const documents = (data.documents || []).map((doc: any) => ({
         _id: doc._id || doc.id,
         name: doc.name || 'Document',
         type: doc.type === 'image' ? 'image' : doc.type === 'doc' ? 'doc' : 'pdf',
@@ -278,8 +217,22 @@ export const documentService = {
         projectName: doc.projectName,
         promoteurName: doc.promoteurName,
         promoteurAvatar: doc.promoteurAvatar,
-        createdAt: doc.createdAt || doc.uploadedAt,
+        size: doc.size,
+        createdAt: doc.createdAt,
+        visibility: doc.visibility || 'public',
       }));
+
+      console.log('[DocumentService] Documents with visibility:', documents.map(d => ({ name: d.name, visibility: d.visibility })));
+
+      return {
+        documents,
+        total: data.total || 0,
+        hasMore: data.hasMore || false,
+      };
+    } catch (error) {
+      console.error('[DocumentService] Error in getDocuments:', error);
+      throw error;
+    }
   },
 };
 

@@ -24,6 +24,13 @@ api.interceptors.request.use(
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        // Decode token to log user ID
+        try {
+          const decoded = JSON.parse(atob(token.split('.')[1]));
+          console.log('[API] Request with userId:', decoded.id, '| URL:', config.url);
+        } catch (e) {
+          console.log('[API] Could not decode token');
+        }
       }
     }
     return config;

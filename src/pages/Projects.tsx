@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Eye, Loader2, ShieldCheck, Sparkles, Star, Zap, Crown } from "lucide-react";
+import { Eye, Loader2, ShieldCheck, Sparkles, Star, Zap, Crown, BarChart2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import AdvancementModal from "@/components/projects/AdvancementModal";
 
 const FIRSTIMMO_URL = import.meta.env.VITE_FIRSTIMMO_URL || 'http://localhost:8084';
 const projectUrl = (id: string) => `${FIRSTIMMO_URL}/Pproject?id=${id}`;
@@ -136,7 +137,7 @@ function SponsoredCard({ project }: { project: any }) {
 }
 
 /** Carte verticale pour les grilles (Nouveautés, Top Vérifiés) */
-function GridProjectCard({ project }: { project: any }) {
+function GridProjectCard({ project, onAdvancement }: { project: any; onAdvancement: (p: any) => void }) {
   const image = getImage(project);
   const title = project.title || project.name || "Projet";
   const location = project.area || project.city || project.location?.city || project.location || "—";
@@ -182,14 +183,22 @@ function GridProjectCard({ project }: { project: any }) {
               </div>
             )}
           </div>
-          <a
-            href={projectUrl(project._id)}
-
-            className="flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white px-4 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0"
-          >
-            <Eye size={13} />
-            Aperçu
-          </a>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => onAdvancement(project)}
+              className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white px-4 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap"
+            >
+              <BarChart2 size={13} />
+              Avancement
+            </button>
+            <a
+              href={projectUrl(project._id)}
+              className="flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white px-4 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap"
+            >
+              <Eye size={13} />
+              Aperçu
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -197,7 +206,7 @@ function GridProjectCard({ project }: { project: any }) {
 }
 
 /** Carte horizontale pour la liste principale */
-function ProjectCard({ project }: { project: any }) {
+function ProjectCard({ project, onAdvancement }: { project: any; onAdvancement: (p: any) => void }) {
   const image = getImage(project);
   const title = project.title || project.name || "Projet";
   const location = project.area || project.city || project.location?.city || project.location || "—";
@@ -246,15 +255,24 @@ function ProjectCard({ project }: { project: any }) {
                 Score {trustScore}/100
               </Badge>
             )}
-            <a
-              href={projectUrl(project._id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white px-4 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap"
-            >
-              <Eye size={13} />
-              Aperçu
-            </a>
+            <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => onAdvancement(project)}
+                className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white px-4 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap"
+              >
+                <BarChart2 size={13} />
+                Avancement
+              </button>
+              <a
+                href={projectUrl(project._id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white px-4 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap"
+              >
+                <Eye size={13} />
+                Aperçu
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -268,6 +286,7 @@ export default function Projects() {
     limit: 20,
     sort: "score",
   });
+  const [advancementProject, setAdvancementProject] = useState<any | null>(null);
 
   const { data, isLoading } = useSearchProjects(searchParams);
   const projects = data?.projects ?? [];
@@ -353,7 +372,7 @@ export default function Projects() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {topVerified.map((p) => (
-                <GridProjectCard key={p._id} project={p} />
+                <GridProjectCard key={p._id} project={p} onAdvancement={setAdvancementProject} />
               ))}
             </div>
           </section>
@@ -368,7 +387,7 @@ export default function Projects() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {nouveautes.map((p) => (
-                <GridProjectCard key={p._id} project={p} />
+                <GridProjectCard key={p._id} project={p} onAdvancement={setAdvancementProject} />
               ))}
             </div>
           </section>
@@ -397,7 +416,7 @@ export default function Projects() {
           ) : (
             <div className="space-y-3">
               {projects.map((project) => (
-                <ProjectCard key={project._id} project={project} />
+                <ProjectCard key={project._id} project={project} onAdvancement={setAdvancementProject} />
               ))}
             </div>
           )}
@@ -429,6 +448,13 @@ export default function Projects() {
           )}
         </section>
       </div>
+
+      {advancementProject && (
+        <AdvancementModal
+          project={advancementProject}
+          onClose={() => setAdvancementProject(null)}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -2,7 +2,7 @@ import { Upload, ChevronDown, Crown, ArrowRight, Loader } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import avatarRobert from "@/assets/avatar-robert.svg";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useId } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useClientProfile, useUpdateClientProfile, usePromoteurStatus } from "@/hooks/useApi";
 import { uploadFile } from "@/lib/api";
@@ -41,6 +41,26 @@ const ProfileEdit = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const userClientProfile = user?.clientProfile;
+
+  // Country dropdown state
+  const [isCountryOpen, setIsCountryOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
+  const countrySearchInputRef = useRef<HTMLInputElement>(null);
+  const countryListboxId = useId();
+
+  const countries = useMemo(
+    () => [
+      { code: 'af', name: 'Afghanistan' }, { code: 'za', name: 'Afrique du Sud' }, { code: 'al', name: 'Albanie' }, { code: 'dz', name: 'Algerie' }, { code: 'de', name: 'Allemagne' }, { code: 'ad', name: 'Andorre' }, { code: 'ao', name: 'Angola' }, { code: 'ag', name: 'Antigua-et-Barbuda' }, { code: 'sa', name: 'Arabie Saoudite' }, { code: 'ar', name: 'Argentine' }, { code: 'am', name: 'Armenie' }, { code: 'au', name: 'Australie' }, { code: 'at', name: 'Autriche' }, { code: 'az', name: 'Azerbaidjan' }, { code: 'bs', name: 'Bahamas' }, { code: 'bh', name: 'Bahrein' }, { code: 'bd', name: 'Bangladesh' }, { code: 'bb', name: 'Barbade' }, { code: 'be', name: 'Belgique' }, { code: 'bz', name: 'Belize' }, { code: 'bj', name: 'Benin' }, { code: 'bt', name: 'Bhoutan' }, { code: 'by', name: 'Bielorussie' }, { code: 'mm', name: 'Birmanie' }, { code: 'bo', name: 'Bolivie' }, { code: 'ba', name: 'Bosnie-Herzegovine' }, { code: 'bw', name: 'Botswana' }, { code: 'br', name: 'Bresil' }, { code: 'bn', name: 'Brunei' }, { code: 'bg', name: 'Bulgarie' }, { code: 'bf', name: 'Burkina Faso' }, { code: 'bi', name: 'Burundi' }, { code: 'kh', name: 'Cambodge' }, { code: 'cm', name: 'Cameroun' }, { code: 'ca', name: 'Canada' }, { code: 'cv', name: 'Cap-Vert' }, { code: 'cf', name: 'Centrafrique' }, { code: 'cl', name: 'Chili' }, { code: 'cn', name: 'Chine' }, { code: 'cy', name: 'Chypre' }, { code: 'co', name: 'Colombie' }, { code: 'km', name: 'Comores' }, { code: 'kr', name: 'Coree du Sud' }, { code: 'kp', name: 'Coree du Nord' }, { code: 'cr', name: 'Costa Rica' }, { code: 'ci', name: "Cote d'Ivoire" }, { code: 'hr', name: 'Croatie' }, { code: 'cu', name: 'Cuba' }, { code: 'dk', name: 'Danemark' }, { code: 'dj', name: 'Djibouti' }, { code: 'dm', name: 'Dominique' }, { code: 'eg', name: 'Egypte' }, { code: 'ae', name: 'Emirats Arabes Unis' }, { code: 'ec', name: 'Equateur' }, { code: 'er', name: 'Erythree' }, { code: 'es', name: 'Espagne' }, { code: 'ee', name: 'Estonie' }, { code: 'sz', name: 'Eswatini' }, { code: 'us', name: 'Etats-Unis' }, { code: 'et', name: 'Ethiopie' }, { code: 'fj', name: 'Fidji' }, { code: 'fi', name: 'Finlande' }, { code: 'fr', name: 'France' }, { code: 'ga', name: 'Gabon' }, { code: 'gm', name: 'Gambie' }, { code: 'ge', name: 'Georgie' }, { code: 'gh', name: 'Ghana' }, { code: 'gr', name: 'Grece' }, { code: 'gd', name: 'Grenade' }, { code: 'gt', name: 'Guatemala' }, { code: 'gn', name: 'Guinee' }, { code: 'gw', name: 'Guinee-Bissau' }, { code: 'gq', name: 'Guinee equatoriale' }, { code: 'gy', name: 'Guyana' }, { code: 'ht', name: 'Haiti' }, { code: 'hn', name: 'Honduras' }, { code: 'hu', name: 'Hongrie' }, { code: 'in', name: 'Inde' }, { code: 'id', name: 'Indonesie' }, { code: 'iq', name: 'Irak' }, { code: 'ir', name: 'Iran' }, { code: 'ie', name: 'Irlande' }, { code: 'is', name: 'Islande' }, { code: 'il', name: 'Israel' }, { code: 'it', name: 'Italie' }, { code: 'jm', name: 'Jamaique' }, { code: 'jp', name: 'Japon' }, { code: 'jo', name: 'Jordanie' }, { code: 'kz', name: 'Kazakhstan' }, { code: 'ke', name: 'Kenya' }, { code: 'kg', name: 'Kirghizistan' }, { code: 'ki', name: 'Kiribati' }, { code: 'xk', name: 'Kosovo' }, { code: 'kw', name: 'Koweit' }, { code: 'la', name: 'Laos' }, { code: 'ls', name: 'Lesotho' }, { code: 'lv', name: 'Lettonie' }, { code: 'lb', name: 'Liban' }, { code: 'lr', name: 'Liberia' }, { code: 'ly', name: 'Libye' }, { code: 'li', name: 'Liechtenstein' }, { code: 'lt', name: 'Lituanie' }, { code: 'lu', name: 'Luxembourg' }, { code: 'mk', name: 'Macedoine du Nord' }, { code: 'mg', name: 'Madagascar' }, { code: 'my', name: 'Malaisie' }, { code: 'mw', name: 'Malawi' }, { code: 'mv', name: 'Maldives' }, { code: 'ml', name: 'Mali' }, { code: 'mt', name: 'Malte' }, { code: 'ma', name: 'Maroc' }, { code: 'mh', name: 'Marshall' }, { code: 'mu', name: 'Maurice' }, { code: 'mr', name: 'Mauritanie' }, { code: 'mx', name: 'Mexique' }, { code: 'fm', name: 'Micronesie' }, { code: 'md', name: 'Moldavie' }, { code: 'mc', name: 'Monaco' }, { code: 'mn', name: 'Mongolie' }, { code: 'me', name: 'Montenegro' }, { code: 'mz', name: 'Mozambique' }, { code: 'na', name: 'Namibie' }, { code: 'nr', name: 'Nauru' }, { code: 'np', name: 'Nepal' }, { code: 'ni', name: 'Nicaragua' }, { code: 'ne', name: 'Niger' }, { code: 'ng', name: 'Nigeria' }, { code: 'no', name: 'Norvege' }, { code: 'nz', name: 'Nouvelle-Zelande' }, { code: 'om', name: 'Oman' }, { code: 'ug', name: 'Ouganda' }, { code: 'uz', name: 'Ouzbekistan' }, { code: 'pk', name: 'Pakistan' }, { code: 'pw', name: 'Palaos' }, { code: 'pa', name: 'Panama' }, { code: 'pg', name: 'Papouasie-Nouvelle-Guinee' }, { code: 'py', name: 'Paraguay' }, { code: 'nl', name: 'Pays-Bas' }, { code: 'pe', name: 'Perou' }, { code: 'ph', name: 'Philippines' }, { code: 'pl', name: 'Pologne' }, { code: 'pr', name: 'Porto Rico' }, { code: 'pt', name: 'Portugal' }, { code: 'qa', name: 'Qatar' }, { code: 'ro', name: 'Roumanie' }, { code: 'gb', name: 'Royaume-Uni' }, { code: 'ru', name: 'Russie' }, { code: 'rw', name: 'Rwanda' }, { code: 'kn', name: 'Saint-Christophe-et-Nieves' }, { code: 'sm', name: 'Saint-Marin' }, { code: 'vc', name: 'Saint-Vincent-et-les-Grenadines' }, { code: 'lc', name: 'Sainte-Lucie' }, { code: 'sv', name: 'Salvador' }, { code: 'ws', name: 'Samoa' }, { code: 'st', name: 'Sao Tome-et-Principe' }, { code: 'sn', name: 'Senegal' }, { code: 'rs', name: 'Serbie' }, { code: 'sc', name: 'Seychelles' }, { code: 'sl', name: 'Sierra Leone' }, { code: 'sg', name: 'Singapour' }, { code: 'sk', name: 'Slovaquie' }, { code: 'si', name: 'Slovenie' }, { code: 'so', name: 'Somalie' }, { code: 'sd', name: 'Soudan' }, { code: 'ss', name: 'Soudan du Sud' }, { code: 'lk', name: 'Sri Lanka' }, { code: 'se', name: 'Suede' }, { code: 'ch', name: 'Suisse' }, { code: 'sr', name: 'Suriname' }, { code: 'sy', name: 'Syrie' }, { code: 'tj', name: 'Tadjikistan' }, { code: 'tw', name: 'Taiwan' }, { code: 'tz', name: 'Tanzanie' }, { code: 'td', name: 'Tchad' }, { code: 'cz', name: 'Tchequie' }, { code: 'th', name: 'Thailande' }, { code: 'tl', name: 'Timor oriental' }, { code: 'tg', name: 'Togo' }, { code: 'to', name: 'Tonga' }, { code: 'tt', name: 'Trinite-et-Tobago' }, { code: 'tn', name: 'Tunisie' }, { code: 'tm', name: 'Turkmenistan' }, { code: 'tr', name: 'Turquie' }, { code: 'tv', name: 'Tuvalu' }, { code: 'ua', name: 'Ukraine' }, { code: 'uy', name: 'Uruguay' }, { code: 'vu', name: 'Vanuatu' }, { code: 'va', name: 'Vatican' }, { code: 've', name: 'Venezuela' }, { code: 'vn', name: 'Vietnam' }, { code: 'ye', name: 'Yemen' }, { code: 'zm', name: 'Zambie' }, { code: 'zw', name: 'Zimbabwe' },
+    ],
+    []
+  );
+
+  const countryCodeToFlag = (countryCode: string) =>
+    countryCode.toUpperCase().split('').map((char) => String.fromCodePoint(127397 + char.charCodeAt(0))).join('');
+
+  const selectedCountry = countries.find((c) => c.name === formData.residence);
+  const visibleCountries = countries.filter((c) => c.name.toLowerCase().includes(countrySearch.trim().toLowerCase()));
 
   const normalizePaymentMode = (value: string | undefined): string => {
     const raw = String(value || "").trim().toLowerCase();
@@ -179,6 +199,35 @@ const ProfileEdit = () => {
       accompagnements: accompagnements.length > 0 ? accompagnements : prev.accompagnements,
     }));
   }, [user, profile, userClientProfile]);
+
+  // Handle country dropdown click-outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(e.target as Node)) {
+        setIsCountryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isCountryOpen) {
+        setIsCountryOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isCountryOpen]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isCountryOpen) {
+      countrySearchInputRef.current?.focus();
+    }
+  }, [isCountryOpen]);
 
   // Handler pour les checkboxes
   const handleCheckbox = (field: "objectif" | "accompagnements", value: string) => {
@@ -448,20 +497,54 @@ const ProfileEdit = () => {
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Résidence
               </label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <span className="text-lg">📍</span>
-                </div>
-                <select
-                  value={formData.residence}
-                  onChange={(e) => setFormData({ ...formData, residence: e.target.value })}
-                  className="w-full pl-12 pr-10 py-3 bg-white border border-slate-200 text-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none"
+              <div className="relative" ref={countryDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsCountryOpen(!isCountryOpen)}
+                  className="w-full h-11 px-4 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm flex items-center justify-between hover:bg-slate-50 transition-colors"
                 >
-                  <option value="Paris, France">Paris, France</option>
-                  <option value="Lyon, France">Lyon, France</option>
-                  <option value="Marseille, France">Marseille, France</option>
-                </select>
-                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <span className="flex items-center gap-2">
+                    {selectedCountry && <span>{countryCodeToFlag(selectedCountry.code)}</span>}
+                    <span>{selectedCountry?.name || 'Sélectionner un pays'}</span>
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCountryOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isCountryOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+                    <input
+                      ref={countrySearchInputRef}
+                      type="text"
+                      placeholder="Rechercher..."
+                      value={countrySearch}
+                      onChange={(e) => setCountrySearch(e.target.value)}
+                      className="w-full px-4 py-2 border-b border-slate-200 bg-white text-slate-700 text-sm focus:outline-none"
+                    />
+                    <ul role="listbox" aria-labelledby="country-select" className="max-h-48 overflow-y-auto">
+                      {visibleCountries.map((country) => (
+                        <li key={country.code}>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={selectedCountry?.code === country.code}
+                            onClick={() => {
+                              setFormData({ ...formData, residence: country.name });
+                              setIsCountryOpen(false);
+                              setCountrySearch("");
+                            }}
+                            className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-slate-100 transition-colors ${
+                              selectedCountry?.code === country.code
+                                ? 'bg-sky-50 text-sky-700'
+                                : 'text-slate-700'
+                            }`}
+                          >
+                            <span>{countryCodeToFlag(country.code)}</span>
+                            <span>{country.name}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
 
