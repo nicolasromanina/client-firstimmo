@@ -284,7 +284,7 @@ export default function Projects() {
   const [searchParams, setSearchParams] = useState<ProjectSearchParams>({
     page: 1,
     limit: 20,
-    sort: "score",
+    sort: "ranking", // Use weighted ranking algorithm: 30% trust + 15% recency + 50% boost + 5% engagement
   });
   const [advancementProject, setAdvancementProject] = useState<any | null>(null);
 
@@ -297,7 +297,7 @@ export default function Projects() {
   const { data: sponsoredData } = useSearchProjects({
     limit: 8,
     featured: true,
-    sort: "score",
+    sort: "ranking", // Use weighted ranking algorithm for consistent prioritization
   });
   const sponsored = sponsoredData?.projects ?? [];
 
@@ -306,7 +306,7 @@ export default function Projects() {
     limit: 4,
     featured: true,
     verifiedOnly: true,
-    sort: "score",
+    sort: "ranking", // Use weighted ranking algorithm for consistent prioritization
   });
   const topVerified = topVerifiedData?.projects ?? [];
 
