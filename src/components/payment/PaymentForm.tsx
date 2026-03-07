@@ -12,6 +12,7 @@ import { useCreateBecomePromoteurSubscription } from "@/hooks/useApi";
 import { becomePromoteurService } from "@/lib/services";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Noms et prix des plans pour le récapitulatif
@@ -21,7 +22,7 @@ const planNames: Record<string, string> = {
   starter: "Starter",
   publie: "Publié",
   verifie: "Vérifié",
-  partenaire: "Partenaire",
+  premium: "Premium",
   enterprise: "Enterprise",
 };
 
@@ -29,7 +30,7 @@ const planPrices: Record<string, number> = {
   starter: 600,
   publie: 1500,
   verifie: 4200,
-  partenaire: 7200,
+  premium: 7200,
   enterprise: 0,
 };
 
@@ -63,6 +64,7 @@ const PaymentForm = ({ plan }: PaymentFormProps) => {
   const elements = useElements();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const createSubscription = useCreateBecomePromoteurSubscription();
 
   const [formData, setFormData] = useState({
@@ -162,8 +164,16 @@ const PaymentForm = ({ plan }: PaymentFormProps) => {
         // Non-blocking — webhook will pick it up eventually
       }
 
-      // 5. Payment succeeded — redirect to success page
+      // 4.5 Invalidate cache for promoteur status (fixes 60s delay issue)
+      // This ensures the next usePromoteurStatus() query will fetch fresh data
+      queryClient.invalidateQueries({ queryKey: ['promoteurStatus'] });
+
+      // 5. Payment succeeded — wait briefly for webhook to process, then redirect
       toast.success("Paiement réussi ! Bienvenue, Promoteur !");
+
+      // Wait 2 seconds for webhook to create profile (reduces "not promoteur" display)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       navigate("/devenir-promoteur/success?session_id=inline");
     } catch (error: any) {
       toast.error(

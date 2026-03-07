@@ -71,7 +71,7 @@ const App = () => (
           {/* Documents - Liste des documents */}
           <Route path="/documents" element={<Documents />} />
           
-          {/* Partenaires - Liste des partenaires */}
+          {/* Premiums - Liste des partenaires */}
           <Route path="/partenaires" element={<Partners />} />
           
           {/* Page de messagerie client */}

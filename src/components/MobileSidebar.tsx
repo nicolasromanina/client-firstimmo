@@ -64,7 +64,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ inline = false }) => {
     { icon: <CalendarDays className="w-5 h-5" />, label: "Rendez-vous", to: "/rendez-vous" },
     { icon: <Star className="w-5 h-5" />, label: "Mes avis", to: "/avis" },
     { icon: <img src={documentIcon} alt="Documents" className="w-5 h-5" />, label: "Documents", to: "/documents" },
-    { icon: <img src={partnerIcon} alt="Partenaires" className="w-5 h-5" />, label: "Partenaires", to: "/partenaires" },
+    { icon: <img src={partnerIcon} alt="Premiums" className="w-5 h-5" />, label: "Premiums", to: "/partenaires" },
   ];
 
   const closeSidebar = () => setIsOpen(false);

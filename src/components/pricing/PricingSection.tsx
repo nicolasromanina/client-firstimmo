@@ -35,13 +35,13 @@ const PLANS = [
     badge: 'Verifie',
   },
   {
-    id: 'partenaire',
-    label: 'Partenaire',
+    id: 'premium',
+    label: 'Premium',
     annualPrice: 7200,
     monthlyEquiv: 600,
     setupFee: 2500,
     color: '#F97316',
-    badge: 'Partenaire',
+    badge: 'Premium',
   },
   {
     id: 'enterprise',

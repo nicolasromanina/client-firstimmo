@@ -1,7 +1,8 @@
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
-  Crown, Loader2, Rocket, CheckCircle2, XCircle, ArrowRight,
+  Crown, Loader2, Rocket, CheckCircle2, XCircle, ArrowRight, AlertCircle,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import PricingHeader from "@/components/pricing/PricingHeader";
 import PricingCard from "@/components/pricing/PricingCard";
 import { plansData } from "@/components/pricing/PlansData";
@@ -21,9 +22,57 @@ const planNameToId: Record<string, string> = {
 };
 
 /* ---------- Success View ---------- */
-const SuccessView = () => {
+const SuccessView = ({ sessionId }: { sessionId: string | null }) => {
   const promoteurDashboardUrl =
     import.meta.env.VITE_PROMOTEUR_URL || "http://localhost:8081";
+
+  // Refetch promoteur status to verify activation
+  const { data: statusData, isLoading: isStatusLoading, refetch } = usePromoteurStatus();
+  const [checkCount, setCheckCount] = useState(0);
+  const maxChecks = 5;
+
+  // Auto-refetch every 1 second, max 5 times (5 seconds total)
+  useEffect(() => {
+    if (!sessionId || isStatusLoading || statusData?.isPromoteur || checkCount >= maxChecks) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      refetch();
+      setCheckCount(prev => prev + 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [sessionId, isStatusLoading, statusData?.isPromoteur, checkCount, refetch]);
+
+  const isActivated = statusData?.isPromoteur;
+  const activationInProgress = !isActivated && checkCount < maxChecks;
+
+  if (isStatusLoading && checkCount === 0) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-16 px-4">
+        <Loader2 className="w-12 h-12 animate-spin text-green-600 mx-auto mb-4" />
+        <p className="text-slate-600">Vérification de votre activation...</p>
+      </div>
+    );
+  }
+
+  if (activationInProgress) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-16 px-4">
+        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-4">Finalisation en cours...</h1>
+        <p className="text-slate-600 mb-2">
+          Nous activons votre compte promoteur.
+        </p>
+        <p className="text-slate-500 mb-8">
+          Cela ne devrait prendre que quelques secondes.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto text-center py-16 px-4">
@@ -34,37 +83,68 @@ const SuccessView = () => {
       <p className="text-lg text-slate-600 mb-2">
         Votre paiement a été accepté avec succès.
       </p>
-      <p className="text-slate-500 mb-8">
-        Vous êtes maintenant{" "}
-        <span className="font-semibold text-green-700">Promoteur</span> sur notre
-        plateforme. Complétez votre profil pour commencer à publier vos projets.
-      </p>
 
-      <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-8 text-left">
-        <h3 className="font-semibold text-slate-900 mb-3">Prochaines étapes :</h3>
-        <ul className="space-y-3">
-          {[
-            "Complétez votre profil promoteur (logo, description, coordonnées)",
-            "Soumettez vos documents KYC pour la vérification",
-            "Publiez votre premier projet immobilier",
-          ].map((step, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                {i + 1}
-              </span>
-              <span className="text-slate-700 text-sm">{step}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {isActivated ? (
+        <>
+          <p className="text-slate-500 mb-8">
+            Vous êtes maintenant{" "}
+            <span className="font-semibold text-green-700">Promoteur</span> sur notre
+            plateforme. Complétez votre profil pour commencer à publier vos projets.
+          </p>
 
-      <a
-        href={promoteurDashboardUrl}
-        className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-xl transition-colors"
-      >
-        <Rocket className="w-5 h-5" />
-        Accéder à mon espace promoteur
-      </a>
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-8 text-left">
+            <h3 className="font-semibold text-slate-900 mb-3">Prochaines étapes :</h3>
+            <ul className="space-y-3">
+              {[
+                "Complétez votre profil promoteur (logo, description, coordonnées)",
+                "Soumettez vos documents KYC pour la vérification",
+                "Publiez votre premier projet immobilier",
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span className="text-slate-700 text-sm">{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <a
+            href={promoteurDashboardUrl}
+            className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-xl transition-colors"
+          >
+            <Rocket className="w-5 h-5" />
+            Accéder à mon espace promoteur
+          </a>
+        </>
+      ) : (
+        <>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8">
+            <div className="flex gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <h3 className="font-semibold text-amber-900 mb-2">Activation en attente</h3>
+                <p className="text-sm text-amber-800 mb-4">
+                  Votre paiement a été reçu, mais l'activation de votre compte est en cours.
+                  Veuillez <strong>rafraîchir cette page</strong> ou attendre quelques instants.
+                </p>
+                <p className="text-xs text-amber-700">
+                  Si le problème persiste, contactez notre support.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded-xl transition-colors"
+          >
+            <Loader2 className="w-5 h-5" />
+            Rafraîchir la page
+          </button>
+        </>
+      )}
     </div>
   );
 };
@@ -141,7 +221,7 @@ const BecomePromoteur = () => {
   if (sessionId) {
     return (
       <main className="min-h-screen" style={{ backgroundColor: "#F8FAFB" }}>
-        <SuccessView />
+        <SuccessView sessionId={sessionId} />
         <Footer />
       </main>
     );

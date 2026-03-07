@@ -41,7 +41,7 @@ const roleColorMap: Record<string, { roleColor: string; borderColor: string; lab
   banque: { roleColor: "text-indigo-600", borderColor: "border-indigo-400", label: "Banque" },
   assurance: { roleColor: "text-amber-600", borderColor: "border-amber-400", label: "Assurance" },
   inspection: { roleColor: "text-orange-600", borderColor: "border-orange-400", label: "Inspection / BTP" },
-  autre: { roleColor: "text-gray-600", borderColor: "border-gray-400", label: "Partenaire" },
+  autre: { roleColor: "text-gray-600", borderColor: "border-gray-400", label: "Premium" },
 };
 
 type FilterCategory = "all" | "notaire" | "architecte" | "courtier" | "banque" | "assurance" | "inspection";
@@ -79,7 +79,7 @@ const Partners = () => {
       return {
         id: p._id || p.id || String(index + 1),
         avatar: p.logo || p.avatar || fallbackAvatars[index % fallbackAvatars.length],
-        name: p.name || "Partenaire",
+        name: p.name || "Premium",
         type: colors.label,
         roleColor: colors.roleColor,
         borderColor: colors.borderColor,
