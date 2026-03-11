@@ -20,6 +20,33 @@ export const clientProfileService = {
   },
 };
 
+// ===== Account Settings (Email, Password, Deactivation) =====
+export const accountService = {
+  requestChangeEmail: async (data: { newEmail: string; currentPassword: string }): Promise<{ message: string }> => {
+    return await request({ url: '/api/auth/request-change-email', method: 'post', data });
+  },
+
+  confirmChangeEmail: async (data: { code: string }): Promise<{ message: string }> => {
+    return await request({ url: '/api/auth/confirm-change-email', method: 'post', data });
+  },
+
+  changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<{ message: string }> => {
+    return await request({ url: '/api/auth/change-password', method: 'post', data });
+  },
+
+  deactivateAccount: async (data: { password: string; confirmation: string }): Promise<{ message: string }> => {
+    return await request({ url: '/api/auth/deactivate-account', method: 'post', data });
+  },
+
+  cancelDeactivation: async (): Promise<{ message: string }> => {
+    return await request({ url: '/api/auth/cancel-deactivation', method: 'post' });
+  },
+
+  exportMyData: async (): Promise<any> => {
+    return await request({ url: '/api/auth/export-data', method: 'get' });
+  },
+};
+
 // ===== Projects =====
 export interface ProjectSearchParams {
   page?: number;
@@ -450,5 +477,48 @@ export const priceAnalyticsService = {
 
   getAffordableAreas: async (country: string, city: string, maxPrice: number) => {
     return await request({ url: `/api/price-analytics/affordable/${country}/${city}`, method: 'get', params: { maxPrice } });
+  },
+};
+
+// ===== Onboarding =====
+export interface OnboardingData {
+  step1?: {
+    nom: string;
+    prenom: string;
+    email: string;
+    telephonePrefix: string;
+    telephone: string;
+    residence: string;
+    adresse: string;
+    source: string;
+    objectif: string;
+  };
+  step2?: {
+    recherche: string[];
+    typeBien: string;
+    surface: string;
+    zone: string;
+    budget: string;
+    decision: string;
+  };
+  step3?: {
+    modePaiement: string;
+    accordBancaire: string;
+    dejaInvesti: string;
+    aversionRisque: string;
+    partenaires: string[];
+    acceptCGU: boolean;
+  };
+}
+
+export const onboardingService = {
+  getOnboardingData: async (): Promise<OnboardingData> => {
+    try {
+      const data: any = await request({ url: '/api/onboarding/data', method: 'get' });
+      return data || {};
+    } catch (error) {
+      console.warn('Could not fetch onboarding data:', error);
+      return {};
+    }
   },
 };

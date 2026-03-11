@@ -91,7 +91,7 @@ function SponsoredCard({ project }: { project: any }) {
   const borderColor = boost?.tier === 'enterprise' ? 'border-t-purple-400' : boost?.tier === 'premium' ? 'border-t-orange-400' : 'border-t-amber-400';
 
   return (
-    <div className={`w-64 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-slate-100 border-t-2 ${borderColor} hover:shadow-md transition-shadow overflow-hidden flex flex-col`}>
+    <div className={`w-64 flex-shrink-0 bg-white text-slate-900 rounded-2xl shadow-sm border border-slate-100 border-t-2 ${borderColor} hover:shadow-md transition-shadow overflow-hidden flex flex-col dark:bg-white dark:text-slate-900 dark:border-slate-100`}>
       {/* Image */}
       <div className="relative">
         <img src={image} alt={title} className="w-full h-36 object-cover" />
@@ -148,7 +148,7 @@ function GridProjectCard({ project, onAdvancement }: { project: any; onAdvanceme
   const reviewCount: number = project.reviewCount ?? 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+    <div className="bg-white text-slate-900 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow overflow-hidden flex flex-col dark:bg-white dark:text-slate-900 dark:border-slate-100">
       <div className="relative">
         <img src={image} alt={title} className="w-full h-44 object-cover flex-shrink-0" />
         {project.isFeatured && (
@@ -169,7 +169,9 @@ function GridProjectCard({ project, onAdvancement }: { project: any; onAdvanceme
           <img src={localisatisationIcon} alt="" className="w-3.5 h-3.5" />
           <span className="text-xs">{location}</span>
           {project.projectType && (
-            <Badge variant="outline" className="text-xs capitalize ml-1">{project.projectType}</Badge>
+            <Badge variant="outline" className="text-xs capitalize ml-1 bg-white text-slate-600 border-slate-200">
+              {project.projectType}
+            </Badge>
           )}
         </div>
         <div className="flex items-center gap-2 mt-1 pt-2 border-t border-slate-100">
@@ -217,7 +219,7 @@ function ProjectCard({ project, onAdvancement }: { project: any; onAdvancement: 
   const reviewCount: number = project.reviewCount ?? 0;
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+    <div className="bg-white text-slate-900 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow dark:bg-white dark:text-slate-900 dark:border-slate-100">
       <div className="flex gap-4">
         <div className="relative flex-shrink-0">
           <img
@@ -245,12 +247,14 @@ function ProjectCard({ project, onAdvancement }: { project: any; onAdvancement: 
               <span className="text-xs">{location}</span>
             </div>
             {project.projectType && (
-              <Badge variant="outline" className="text-xs capitalize">{project.projectType}</Badge>
+              <Badge variant="outline" className="text-xs capitalize bg-white text-slate-600 border-slate-200">
+                {project.projectType}
+              </Badge>
             )}
             {avgRating !== null && reviewCount > 0 ? (
               <StarRating rating={avgRating} count={reviewCount} />
             ) : (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600 border border-slate-200">
                 <ShieldCheck className="w-3 h-3 mr-1" />
                 Score {trustScore}/100
               </Badge>

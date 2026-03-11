@@ -14,6 +14,7 @@ import {
   chatService,
   priceAnalyticsService,
   consultedProjectsService,
+  onboardingService,
 } from '@/lib/services';
 import type { Alert } from '@/lib/types';
 
@@ -424,5 +425,14 @@ export const usePriceAnalyticsSearch = (query: string) => {
     queryKey: ['price-analytics', 'search', query],
     queryFn: () => priceAnalyticsService.searchAreas(query),
     enabled: !!query && query.length > 2,
+  });
+};
+
+// ===== Onboarding =====
+export const useOnboardingData = () => {
+  return useQuery({
+    queryKey: ['client', 'onboarding'],
+    queryFn: onboardingService.getOnboardingData,
+    staleTime: 60_000,
   });
 };

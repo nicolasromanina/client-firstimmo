@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import avatarRobert from "@/assets/avatar-robert.svg";
 import { useState, useEffect, useRef, useMemo, useId } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useClientProfile, useUpdateClientProfile, usePromoteurStatus } from "@/hooks/useApi";
+import { useClientProfile, useUpdateClientProfile, usePromoteurStatus, useOnboardingData } from "@/hooks/useApi";
 import { uploadFile } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ const ProfileEdit = () => {
   const { data: profile } = useClientProfile();
   const updateProfile = useUpdateClientProfile();
   const { data: promoteurStatus } = usePromoteurStatus();
+  const { data: onboardingData } = useOnboardingData();
 
   // État du formulaire
   const [formData, setFormData] = useState({
@@ -28,9 +29,9 @@ const ProfileEdit = () => {
     telephone: "",
     residence: "Paris, France",
     address: "",
-    objectif: [] as string[],
-    modePaiement: "comptant",
-    dejaInvesti: "oui",
+    recherche: [] as string[],
+    modePaiement: "Comptant",
+    dejaInvesti: "Oui",
     aversionRisque: "",
     accompagnements: [] as string[],
   });
@@ -64,35 +65,24 @@ const ProfileEdit = () => {
 
   const normalizePaymentMode = (value: string | undefined): string => {
     const raw = String(value || "").trim().toLowerCase();
-    if (raw === "crédit" || raw === "credit") return "credit";
-    if (raw === "comptant") return "comptant";
-    return "comptant";
+    if (raw === "crédit" || raw === "credit") return "Crédit";
+    if (raw === "comptant") return "Comptant";
+    return "Comptant";
   };
 
-  const normalizeDejaInvesti = (value: unknown): "oui" | "non" => {
-    if (value === true || String(value || "").toLowerCase() === "oui") return "oui";
-    if (value === false || String(value || "").toLowerCase() === "non") return "non";
-    return "oui";
-  };
-
-  const normalizeObjectifs = (values: unknown): string[] => {
-    if (!Array.isArray(values)) return [];
-    const mapped = values.map((v) => {
-      const raw = String(v || "").trim().toLowerCase();
-      if (raw.includes("invest")) return "Investissement";
-      if (raw.includes("princip")) return "Residence principale";
-      if (raw.includes("second")) return "Residence secondaire";
-      return String(v || "").trim();
-    });
-    return Array.from(new Set(mapped.filter(Boolean)));
+  const normalizeDejaInvesti = (value: unknown): string => {
+    const raw = String(value || "").trim().toLowerCase();
+    if (raw === "oui" || raw.includes("oui")) return "Oui";
+    if (raw.includes("non")) return "Non c'est mon premier projet";
+    return "Oui";
   };
 
   const normalizeAccompagnements = (values: unknown): string[] => {
     if (!Array.isArray(values)) return [];
     const mapped = values.map((v) => {
       const raw = String(v || "").trim().toLowerCase();
-      if (raw.includes("soc") && raw.includes("btp")) return "Societe BTP";
-      if (raw === "non je ne souhaite pas etre accompagne" || raw === "non") return "Non";
+      if (raw.includes("soc") && raw.includes("btp")) return "Société BTP";
+      if (raw.includes("merci") || raw === "non") return "Non merci";
       if (raw.includes("notaire")) return "Notaire";
       if (raw.includes("avocat")) return "Avocat";
       if (raw.includes("architect")) return "Architecte";
@@ -180,25 +170,31 @@ const ProfileEdit = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  // Pré-remplir le formulaire avec les données utilisateur et profil
+  // Pré-remplir le formulaire avec les données utilisateur, profil et onboarding
   useEffect(() => {
-    const objectifs = normalizeObjectifs(profile?.objectif ?? userClientProfile?.objectif);
-    const accompagnements = normalizeAccompagnements(profile?.accompagnements ?? userClientProfile?.accompagnements);
+    const recherche = Array.isArray(onboardingData?.step2?.recherche) && onboardingData.step2.recherche.length > 0
+      ? onboardingData.step2.recherche
+      : [];
+    const accompagnements = normalizeAccompagnements(
+      onboardingData?.step3?.partenaires ??
+      profile?.accompagnements ??
+      userClientProfile?.accompagnements
+    );
     setFormData((prev) => ({
       ...prev,
-      nom: user?.lastName || prev.nom,
-      prenom: user?.firstName || prev.prenom,
-      email: user?.email || prev.email,
-      telephone: profile?.phone || user?.phone || prev.telephone,
-      address: profile?.address || userClientProfile?.address || prev.address,
-      residence: profile?.residence || userClientProfile?.residence || prev.residence,
-      objectif: objectifs.length > 0 ? objectifs : prev.objectif,
-      modePaiement: normalizePaymentMode(profile?.modePaiement ?? userClientProfile?.modePaiement ?? prev.modePaiement),
-      dejaInvesti: normalizeDejaInvesti(profile?.dejaInvesti ?? userClientProfile?.dejaInvesti ?? prev.dejaInvesti),
-      aversionRisque: profile?.aversionRisque || userClientProfile?.aversionRisque || prev.aversionRisque,
+      nom: onboardingData?.step1?.nom || user?.lastName || prev.nom,
+      prenom: onboardingData?.step1?.prenom || user?.firstName || prev.prenom,
+      email: onboardingData?.step1?.email || user?.email || prev.email,
+      telephone: onboardingData?.step1?.telephone || profile?.phone || user?.phone || prev.telephone,
+      address: onboardingData?.step1?.adresse || profile?.address || userClientProfile?.address || prev.address,
+      residence: onboardingData?.step1?.residence || profile?.residence || userClientProfile?.residence || prev.residence,
+      recherche: recherche.length > 0 ? recherche : prev.recherche,
+      modePaiement: normalizePaymentMode(onboardingData?.step3?.modePaiement ?? profile?.modePaiement ?? userClientProfile?.modePaiement ?? prev.modePaiement),
+      dejaInvesti: normalizeDejaInvesti(onboardingData?.step3?.dejaInvesti ?? profile?.dejaInvesti ?? userClientProfile?.dejaInvesti ?? prev.dejaInvesti),
+      aversionRisque: onboardingData?.step3?.aversionRisque || profile?.aversionRisque || userClientProfile?.aversionRisque || prev.aversionRisque,
       accompagnements: accompagnements.length > 0 ? accompagnements : prev.accompagnements,
     }));
-  }, [user, profile, userClientProfile]);
+  }, [user, profile, userClientProfile, onboardingData]);
 
   // Handle country dropdown click-outside
   useEffect(() => {
@@ -230,12 +226,12 @@ const ProfileEdit = () => {
   }, [isCountryOpen]);
 
   // Handler pour les checkboxes
-  const handleCheckbox = (field: "objectif" | "accompagnements", value: string) => {
+  const handleCheckbox = (field: "recherche" | "objectif" | "accompagnements", value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter((v) => v !== value)
-        : [...prev[field], value],
+      [field]: prev[field as keyof typeof prev].includes(value)
+        ? (prev[field as keyof typeof prev] as string[]).filter((v) => v !== value)
+        : [...(prev[field as keyof typeof prev] as string[]), value],
     }));
   };
 
@@ -300,15 +296,14 @@ const ProfileEdit = () => {
       return;
     }
     try {
-      const dejaInvestiValue = formData.dejaInvesti === "oui" ? true : (formData.dejaInvesti === "non" ? false : undefined);
-      
+      const dejaInvestiValue = formData.dejaInvesti === "Oui" ? true : (formData.dejaInvesti === "Non c'est mon premier projet" ? false : undefined);
+
       await updateProfile.mutateAsync({
         firstName: formData.prenom,
         lastName: formData.nom,
         phone: formData.telephone,
         address: formData.address,
         residence: formData.residence,
-        objectif: normalizeObjectifs(formData.objectif),
         modePaiement: normalizePaymentMode(formData.modePaiement),
         dejaInvesti: dejaInvestiValue as any,
         aversionRisque: formData.aversionRisque,
@@ -569,18 +564,18 @@ const ProfileEdit = () => {
             Informations sur le projet
           </h3>
 
-          {/* Qu'est-ce que vous recherchez ? */}
+          {/* Qu'est-ce que vous recherchez ? (Step 2) */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-slate-900 mb-3">
               Qu'est-ce que vous recherchez ?
             </label>
             <div className="flex flex-wrap gap-4">
-              {["Investissement", "Residence principale", "Residence secondaire"].map((option) => (
+              {["Investissement locatif", "Résidence principale", "Résidence secondaire"].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.objectif.includes(option)}
-                    onChange={() => handleCheckbox("objectif", option)}
+                    checked={formData.recherche.includes(option)}
+                    onChange={() => handleCheckbox("recherche", option)}
                     className="w-4 h-4 rounded bg-[#F5FAFF] border-slate-300 text-sky-500 focus:ring-sky-500"
                   />
                   <span className="text-sm text-slate-700">{option}</span>
@@ -597,13 +592,13 @@ const ProfileEdit = () => {
                 Mode de paiement
               </label>
               <div className="flex gap-6">
-                {["Comptant", "Credit"].map((option) => (
+                {["Comptant", "Crédit"].map((option) => (
                   <label key={option} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modePaiement"
-                      value={option.toLowerCase()}
-                      checked={formData.modePaiement === option.toLowerCase()}
+                      value={option}
+                      checked={formData.modePaiement === option}
                       onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value })}
                       className="w-4 h-4 border-slate-300 text-sky-500 focus:ring-sky-500"
                     />
@@ -616,16 +611,16 @@ const ProfileEdit = () => {
             {/* Avez-vous déjà investi ? */}
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-3">
-                Avez-vous déjà investi ?
+                Avez-vous déjà investi en CI ?
               </label>
               <div className="flex gap-6">
-                {["Oui", "Non"].map((option) => (
+                {["Oui", "Non c'est mon premier projet"].map((option) => (
                   <label key={option} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="dejaInvesti"
-                      value={option.toLowerCase()}
-                      checked={formData.dejaInvesti === option.toLowerCase()}
+                      value={option}
+                      checked={formData.dejaInvesti === option}
                       onChange={(e) => setFormData({ ...formData, dejaInvesti: e.target.value })}
                       className="w-4 h-4 border-slate-300 text-sky-500 focus:ring-sky-500"
                     />
@@ -650,9 +645,9 @@ const ProfileEdit = () => {
             </label>
             <div className="flex flex-wrap gap-4">
               {[
-                "Je ne prends pas de risques",
-                "Risque moyen",
-                "Beaucoup de risques pour plus de profits",
+                "Je ne prends pas de risque",
+                "Risque modéré acceptable",
+                "Beacoup de risque pour plus de profils",
               ].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -675,15 +670,15 @@ const ProfileEdit = () => {
           {/* Mes accompagnements */}
           <div>
             <label className="block text-sm font-semibold text-slate-900 mb-3">
-              Mes accompagnements
+              Souhaitez vous être accompagné par des partenaires vérifiés ?
             </label>
             <div className="flex flex-wrap gap-4">
               {[
                 "Notaire",
                 "Avocat",
                 "Architecte",
-                "Societe BTP",
-                "Non",
+                "Société BTP",
+                "Non merci",
               ].map((option) => (
                 <label key={option} className="flex items-center gap-2 cursor-pointer">
                   <input
