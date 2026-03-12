@@ -69,7 +69,7 @@ const Header = ({ title, showMobileSidebar = true }: HeaderProps) => {
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             {/* Left: hamburger (mobile) + logo */}
             <div className="flex items-center gap-3">
-              {showMobileSidebar && <MobileSidebar />}
+              {showMobileSidebar && <MobileSidebar inline />}
               <Link to="/" className="flex-shrink-0">
                 <img
                   src={Logo}

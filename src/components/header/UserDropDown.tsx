@@ -38,11 +38,12 @@ const UserDropdown = () => {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent 
-        align="end" 
-        className="w-48 bg-gray-900 border border-gray-700 text-white rounded-xl shadow-xl"
+      <DropdownMenuContent
+        align="end"
         sideOffset={8}
+        className="w-48 bg-gray-900 border border-gray-700 text-white rounded-xl shadow-xl overflow-y-auto md:overflow-hidden md:rounded-xl md:w-48 max-md:fixed max-md:inset-0 max-md:w-screen max-md:h-screen max-md:rounded-none max-md:border-0 max-md:p-6 max-md:shadow-none"
       >
+        <div className="max-md:mt-10 max-md:flex max-md:flex-col max-md:gap-2">
         <DropdownMenuItem onClick={() => navigate('/profile')} className="flex items-center gap-3 px-4 py-3 text-sm cursor-pointer hover:bg-white/10 focus:bg-white/10 rounded-lg mx-1 mt-1">
           <User className="w-4 h-4 text-gray-400" />
           <span>Profil</span>
@@ -59,6 +60,7 @@ const UserDropdown = () => {
           <LogOut className="w-4 h-4" />
           <span>Se Déconnecter</span>
         </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
