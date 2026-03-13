@@ -1,4 +1,3 @@
-import { MapPin } from "lucide-react";
 import localisatisationIcon from "@/assets/localisation-icon.svg";
 
 /**
@@ -14,6 +13,7 @@ interface ProjectCardProps {
   location: string;
   priceRange: string;
   visitDate: string;
+  viewUrl?: string;
 }
 
 const ProjectCard = ({
@@ -23,6 +23,7 @@ const ProjectCard = ({
   location,
   priceRange,
   visitDate,
+  viewUrl,
 }: ProjectCardProps) => {
   return (
     <div className="flex gap-4 py-4 border-b border-slate-100 last:border-b-0">
@@ -51,10 +52,20 @@ const ProjectCard = ({
             <span className="text-xs">{location}</span>
           </div>
 
-          {/* Badge date de visite */}
-          <span className="inline-flex self-start sm:self-auto px-3 py-1 bg-slate-900 text-white text-xs rounded-full">
-            {visitDate}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Badge date de visite */}
+            <span className="inline-flex self-start sm:self-auto px-3 py-1 bg-slate-900 text-white text-xs rounded-full">
+              {visitDate}
+            </span>
+            {viewUrl && (
+              <a
+                href={viewUrl}
+                className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50"
+              >
+                Voir le projet
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>

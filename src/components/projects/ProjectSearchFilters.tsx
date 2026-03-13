@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, SlidersHorizontal, X, Check, Sparkles } from "lucide-react";
+import { SlidersHorizontal, X, Check, Sparkles } from "lucide-react";
+import { projectService } from "@/lib/services";
 import type { ProjectSearchParams } from "@/lib/services";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,10 @@ export function ProjectSearchFilters({
 }: ProjectSearchFiltersProps) {
   const [searchInput, setSearchInput] = useState(params.search ?? "");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const blurTimeoutRef = useRef<number | null>(null);
   const [localFilters, setLocalFilters] = useState({
     country: params.country ?? "",
     city: params.city ?? "",
@@ -70,6 +75,8 @@ export function ProjectSearchFilters({
       search: searchInput.trim() || undefined,
       page: 1,
     });
+    setShowSuggestions(false);
+    setShowAdvanced(false);
   };
 
   const applyFilters = () => {
@@ -98,6 +105,7 @@ export function ProjectSearchFilters({
       verifiedOnly: localFilters.verifiedOnly || undefined,
       page: 1,
     });
+    setShowAdvanced(false);
   };
 
   const clearFilters = () => {
@@ -116,6 +124,8 @@ export function ProjectSearchFilters({
       page: 1,
       limit: params.limit ?? 20,
     });
+    setShowAdvanced(false);
+    setShowSuggestions(false);
   };
 
   const hasActiveFilters =
@@ -181,6 +191,55 @@ export function ProjectSearchFilters({
     onChange(next);
   };
 
+  useEffect(() => {
+    if (blurTimeoutRef.current) {
+      window.clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+
+    const term = searchInput.trim();
+    if (term.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSuggesting(true);
+    const handle = window.setTimeout(async () => {
+      try {
+        const result = await projectService.searchProjects({ search: term, limit: 6, page: 1 });
+        const projects = result.projects || [];
+        const bucket: string[] = [];
+        const add = (value?: string) => {
+          if (!value) return;
+          const trimmed = value.trim();
+          if (!trimmed) return;
+          if (!bucket.some((item) => item.toLowerCase() === trimmed.toLowerCase())) {
+            bucket.push(trimmed);
+          }
+        };
+        projects.forEach((p: any) => {
+          add(p.title || p.name);
+          add(p.city);
+          add(p.area);
+          add(p.location?.city);
+          add(p.country);
+        });
+        setSuggestions(bucket.slice(0, 6));
+        setShowSuggestions(true);
+      } catch {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsSuggesting(false);
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(handle);
+    };
+  }, [searchInput]);
+
   return (
     <Card className={cn("w-full border-slate-200 bg-gradient-to-b from-white to-slate-50/40 text-slate-900 shadow-sm dark:border-slate-200 dark:bg-white dark:text-slate-900", className)}>
       <CardHeader className="pb-3">
@@ -196,14 +255,42 @@ export function ProjectSearchFilters({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Barre de recherche */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="Pays, ville, quartier, mot-clé..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && applySearch()}
-            className="flex-1 bg-white text-slate-900 border-slate-200 dark:bg-white dark:text-slate-900 dark:border-slate-200"
-          />
+        <div className="flex gap-2 relative">
+          <div className="flex-1 relative">
+            <Input
+              placeholder="Pays, ville, quartier, mot-clé..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applySearch()}
+              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+              onBlur={() => {
+                blurTimeoutRef.current = window.setTimeout(() => setShowSuggestions(false), 150);
+              }}
+              className="w-full bg-white text-slate-900 border-slate-200 dark:bg-white dark:text-slate-900 dark:border-slate-200"
+            />
+            {showSuggestions && (suggestions.length > 0 || isSuggesting) && (
+              <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                {isSuggesting ? (
+                  <div className="px-4 py-3 text-sm text-slate-500">Recherche en cours...</div>
+                ) : (
+                  suggestions.map((item) => (
+                    <button
+                      type="button"
+                      key={item}
+                      onMouseDown={() => {
+                        setSearchInput(item);
+                        setShowSuggestions(false);
+                        onChange({ ...params, search: item, page: 1 });
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      {item}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <Button onClick={applySearch} size="default">
             Rechercher
           </Button>
@@ -399,3 +486,7 @@ export function ProjectSearchFilters({
     </Card>
   );
 }
+
+
+
+

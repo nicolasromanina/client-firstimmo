@@ -3,7 +3,7 @@ import { Download, Eye, ChevronDown, Loader2, X, FileText, Image, Lock } from "l
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import pdfIcon from "@/assets/pdf-icon.svg";
 import imageIcon from "@/assets/image-icon.svg";
-import { useClientDocuments } from "@/hooks/useApi";
+import { useClientDocuments, useFavorites } from "@/hooks/useApi";
 import { request } from "@/lib/client";
 import type { ClientDocument } from "@/lib/types";
 
@@ -26,7 +26,8 @@ interface Document {
   project: string;
   projectId?: string;
   size?: number;
-  visibility?: 'public' | 'private';
+  visibility?: "public" | "private" | "shared";
+  canAccess?: boolean;
 }
 
 type FilterCategory = "plans" | "juridique" | "echanges";
@@ -60,8 +61,21 @@ const Documents = () => {
     limit,
     search: searchQuery || undefined,
   });
+  const { data: favoritesData } = useFavorites();
+  const favoriteProjectIds = new Set(
+    (favoritesData || [])
+      .map((fav: any) => fav?.project?._id || fav?.project || fav?.projectId)
+      .filter(Boolean)
+      .map((id: any) => String(id))
+  );
 
-  const documents: Document[] = (apiResponse?.documents || []).map((doc: ClientDocumentView) => ({
+  const documents: Document[] = (apiResponse?.documents || [])
+    .filter((doc: ClientDocumentView) => {
+      if (favoriteProjectIds.size === 0) return false;
+      const projectId = doc.projectId || (doc as any)?.project?._id || (doc as any)?.project;
+      return projectId && favoriteProjectIds.has(String(projectId));
+    })
+    .map((doc: ClientDocumentView) => ({
     id: doc._id || doc.id,
     type: doc.type === "image" ? ("image" as const) : ("pdf" as const),
     title: doc.name || doc.title || "Document",
@@ -71,6 +85,7 @@ const Documents = () => {
       name: doc.promoteurName || doc.author?.name || "Promoteur",
     },
     url: doc.url,
+    canAccess: (doc as any).canAccess === true,
     date: doc.createdAt
       ? new Date(doc.createdAt).toLocaleDateString("fr-FR", {
           day: "numeric",
@@ -81,7 +96,7 @@ const Documents = () => {
     project: doc.projectName || doc.project?.name || "Projet",
     projectId: doc.projectId,
     size: doc.size,
-    visibility: doc.visibility as 'public' | 'private' | undefined,
+    visibility: (doc.visibility ?? "private") as "public" | "private" | "shared",
   }));
 
   const total = apiResponse?.total || 0;
@@ -244,11 +259,17 @@ const Documents = () => {
               </p>
             </div>
           ) : (
-            documents.map((doc) => (
-              <div
-                key={doc.id}
-                className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 hover:border-slate-200 transition-colors"
-              >
+            documents.map((doc) => {
+              const isAccessible =
+                doc.visibility === "private"
+                  ? doc.canAccess === true
+                  : doc.visibility === "public" || doc.visibility === "shared" || doc.canAccess === true;
+              const canPreview = isAccessible && !!doc.url;
+              return (
+                <div
+                  key={doc.id}
+                  className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 hover:border-slate-200 transition-colors"
+                >
                 <div className="flex flex-col gap-4">
                   {/* Titre avec icône et catégorie */}
                   <div className="flex items-start justify-between gap-4">
@@ -263,7 +284,7 @@ const Documents = () => {
                         ) : (
                           <img src={imageIcon} alt="Image" className="w-5 h-5" />
                         )}
-                        {doc.visibility === 'private' && (
+                        {doc.visibility === "private" && !isAccessible && (
                           <div className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-1">
                             <Lock size={10} className="text-white" />
                           </div>
@@ -272,8 +293,11 @@ const Documents = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-slate-900 truncate">{doc.title}</h3>
-                          {doc.visibility === 'private' && (
+                          {doc.visibility === "private" && !isAccessible && (
                             <span className="text-amber-600 text-xs font-medium whitespace-nowrap">Sur demande</span>
+                          )}
+                          {isAccessible && (
+                            <span className="text-emerald-600 text-xs font-medium whitespace-nowrap">Disponible</span>
                           )}
                         </div>
                         <p className="text-xs text-slate-500 mt-1">{formatFileSize(doc.size)}</p>
@@ -301,7 +325,7 @@ const Documents = () => {
                   )}
 
                   {/* Private Document Info Box */}
-                  {doc.visibility === 'private' && (
+                  {doc.visibility === "private" && !isAccessible && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
                       <Lock size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
@@ -338,7 +362,16 @@ const Documents = () => {
 
                     {/* Boutons d'action */}
                     <div className="flex items-center gap-2 sm:ml-auto flex-wrap">
-                      {doc.visibility === 'private' ? (
+                      {!canPreview ? (
+                        doc.visibility === "public" ? (
+                          <button
+                            disabled
+                            className="flex items-center gap-2 bg-slate-200 text-slate-500 px-4 py-2 rounded-full text-sm font-medium cursor-not-allowed"
+                            title="Aperçu indisponible pour ce document"
+                          >
+                            Aperçu indisponible
+                          </button>
+                        ) : (
                         <>
                           {accessRequested.has(String(doc.id)) ? (
                             <button
@@ -368,6 +401,7 @@ const Documents = () => {
                             </button>
                           )}
                         </>
+                        )
                       ) : (
                         <>
                           <button
@@ -382,11 +416,11 @@ const Documents = () => {
                           <button
                             disabled={!doc.url}
                             onClick={() => doc.url && setPreviewDoc(doc)}
-                            title="Aperçu du document"
+                            title="Appercu du document"
                             className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
                           >
                             <Eye size={14} />
-                            <span className="hidden sm:inline">Aperçu</span>
+                            <span className="hidden sm:inline">Appercu</span>
                           </button>
                         </>
                       )}
@@ -394,7 +428,8 @@ const Documents = () => {
                   </div>
                 </div>
               </div>
-            ))
+            );
+          })
           )}
         </div>
 
@@ -553,20 +588,12 @@ const Documents = () => {
                   className="w-full h-auto rounded-lg"
                 />
               ) : previewDoc.type === "pdf" && previewDoc.url ? (
-                <div className="bg-slate-100 rounded-lg p-8 text-center">
-                  <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600 mb-4">
-                    L'aperçu PDF n'est pas disponible dans le navigateur.
-                  </p>
-                  <a
-                    href={previewDoc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-6 py-2 rounded-full font-medium transition-colors"
-                  >
-                    <Eye size={16} />
-                    Ouvrir le PDF
-                  </a>
+                <div className="bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                  <iframe
+                    title={previewDoc.title}
+                    src={previewDoc.url}
+                    className="w-full h-[70vh]"
+                  />
                 </div>
               ) : (
                 <div className="bg-slate-100 rounded-lg p-8 text-center">
@@ -599,3 +626,5 @@ const Documents = () => {
 };
 
 export default Documents;
+
+

@@ -4,7 +4,12 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import AdvancementModal from "@/components/projects/AdvancementModal";
 
 const FIRSTIMMO_URL = import.meta.env.VITE_FIRSTIMMO_URL || 'http://localhost:8084';
-const projectUrl = (id: string) => `${FIRSTIMMO_URL}/Pproject?id=${id}`;
+const getAuthToken = () => (typeof window === 'undefined' ? null : localStorage.getItem('token'));
+const projectUrl = (id: string) => {
+  const token = getAuthToken();
+  const base = `${FIRSTIMMO_URL}/Pproject?id=${id}`;
+  return token ? `${base}&token=${encodeURIComponent(token)}` : base;
+};
 
 import projectImmeuble from "@/assets/projet-1.png";
 import projectResidence from "@/assets/projet-2.png";
@@ -136,7 +141,6 @@ function SponsoredCard({ project }: { project: any }) {
   );
 }
 
-/** Carte verticale pour les grilles (Nouveautés, Top Vérifiés) */
 function GridProjectCard({ project, onAdvancement }: { project: any; onAdvancement: (p: any) => void }) {
   const image = getImage(project);
   const title = project.title || project.name || "Projet";
@@ -297,29 +301,17 @@ export default function Projects() {
   const total = data?.total ?? 0;
   const pages = data?.pagination?.pages ?? 1;
 
-  // Projets mis en avant / boostés
-  const { data: sponsoredData } = useSearchProjects({
-    limit: 8,
-    featured: true,
-    sort: "ranking", // Use weighted ranking algorithm for consistent prioritization
-  });
-  const sponsored = sponsoredData?.projects ?? [];
-
-  // Top Vérifiés : featured + plan vérifié
-  const { data: topVerifiedData } = useSearchProjects({
-    limit: 4,
-    featured: true,
-    verifiedOnly: true,
-    sort: "ranking", // Use weighted ranking algorithm for consistent prioritization
-  });
-  const topVerified = topVerifiedData?.projects ?? [];
 
   // Nouveautés
   const { data: recentData } = useSearchProjects({
     limit: 4,
     sort: "recent",
   });
-  const nouveautes = recentData?.projects ?? [];
+  const nouveautes = (recentData?.projects ?? []).slice().sort((a: any, b: any) => {
+    const aDate = new Date(a?.createdAt || a?.publishedAt || a?.updatedAt || 0).getTime();
+    const bDate = new Date(b?.createdAt || b?.publishedAt || b?.updatedAt || 0).getTime();
+    return bDate - aDate;
+  });
 
   const hasActiveSearch =
     !!searchParams.search || !!searchParams.city || !!searchParams.country ||
@@ -348,39 +340,6 @@ export default function Projects() {
             resultCount={total}
           />
         </div>
-
-        {/* Section Mis en avant (boostés) */}
-        {sponsored.length > 0 && !hasActiveSearch && (
-          <section>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-              Mis en avant
-              <span className="text-xs font-normal text-slate-400 ml-1">Projets sponsorisés</span>
-            </h2>
-            <div className="flex gap-4 overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory">
-              {sponsored.map((p) => (
-                <div key={p._id} className="snap-start">
-                  <SponsoredCard project={p} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Section Top Vérifiés */}
-        {topVerified.length > 0 && !hasActiveSearch && (
-          <section>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-green-600" />
-              Top Vérifiés
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {topVerified.map((p) => (
-                <GridProjectCard key={p._id} project={p} onAdvancement={setAdvancementProject} />
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Section Nouveautés */}
         {nouveautes.length > 0 && !hasActiveSearch && (

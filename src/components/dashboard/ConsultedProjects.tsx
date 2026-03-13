@@ -3,6 +3,14 @@ import projectImmeuble from "@/assets/consulted-project-1.png";
 import { useConsultedProjects } from "@/hooks/useApi";
 import { useNavigate } from "react-router-dom";
 import { Search, Loader2 } from "lucide-react";
+const FIRSTIMMO_URL = import.meta.env.VITE_FIRSTIMMO_URL || 'http://localhost:8084';
+const getAuthToken = () => (typeof window === 'undefined' ? null : localStorage.getItem('token'));
+const projectUrl = (id: string) => {
+  const token = getAuthToken();
+  const base = `${FIRSTIMMO_URL}/Pproject?id=${id}`;
+  return token ? `${base}&token=${encodeURIComponent(token)}` : base;
+};
+
 
 /**
  * ConsultedProjects Component
@@ -64,6 +72,7 @@ const ConsultedProjects = () => {
                       : 'Prix sur demande'
                   }
                   visitDate={formatTimeAgo(item.lastViewedAt)}
+                  viewUrl={projectUrl(project._id)}
                 />
               );
             })}
