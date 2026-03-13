@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const isLocalHost = (host: string): boolean =>
   host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost');

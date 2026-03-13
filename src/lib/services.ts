@@ -23,27 +23,27 @@ export const clientProfileService = {
 // ===== Account Settings (Email, Password, Deactivation) =====
 export const accountService = {
   requestChangeEmail: async (data: { newEmail: string; currentPassword: string }): Promise<{ message: string }> => {
-    return await request({ url: '/api/auth/request-change-email', method: 'post', data });
+    return await request({ url: '/auth/request-change-email', method: 'post', data });
   },
 
   confirmChangeEmail: async (data: { code: string }): Promise<{ message: string }> => {
-    return await request({ url: '/api/auth/confirm-change-email', method: 'post', data });
+    return await request({ url: '/auth/confirm-change-email', method: 'post', data });
   },
 
   changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<{ message: string }> => {
-    return await request({ url: '/api/auth/change-password', method: 'post', data });
+    return await request({ url: '/auth/change-password', method: 'post', data });
   },
 
   deactivateAccount: async (data: { password: string; confirmation: string }): Promise<{ message: string }> => {
-    return await request({ url: '/api/auth/deactivate-account', method: 'post', data });
+    return await request({ url: '/auth/deactivate-account', method: 'post', data });
   },
 
   cancelDeactivation: async (): Promise<{ message: string }> => {
-    return await request({ url: '/api/auth/cancel-deactivation', method: 'post' });
+    return await request({ url: '/auth/cancel-deactivation', method: 'post' });
   },
 
   exportMyData: async (): Promise<any> => {
-    return await request({ url: '/api/auth/export-data', method: 'get' });
+    return await request({ url: '/auth/export-data', method: 'get' });
   },
 };
 
@@ -196,8 +196,16 @@ export const partnerService = {
     description: string;
     preferredPartnerId?: string;
     projectId?: string;
+    metadata?: Record<string, any>;
   }): Promise<any> => {
     return await request({ url: '/api/partners/request', method: 'post', data });
+  },
+};
+
+// ===== Brochures =====
+export const brochureService = {
+  getMyBrochures: async (): Promise<{ brochures: any[] }> => {
+    return await request({ url: '/api/brochures/client/my-brochures', method: 'get' });
   },
 };
 
@@ -510,6 +518,22 @@ export interface OnboardingData {
     acceptCGU: boolean;
   };
 }
+
+// ===== Project Access =====
+export const projectAccessService = {
+  requestAccess: async (projectId: string, message?: string) => {
+    return await request({ url: `/api/project-access/${projectId}/request`, method: 'post', data: { message } });
+  },
+  getMyAccess: async (projectId: string) => {
+    return await request({ url: `/api/project-access/${projectId}/my-access`, method: 'get' });
+  },
+  getMyRequests: async () => {
+    return await request({ url: '/api/project-access/my-requests', method: 'get' });
+  },
+  getProjectTimeline: async (projectId: string) => {
+    return await request({ url: `/api/project-access/${projectId}/timeline`, method: 'get' });
+  },
+};
 
 export const onboardingService = {
   getOnboardingData: async (): Promise<OnboardingData> => {

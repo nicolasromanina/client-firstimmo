@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
-import { MoreVertical, Loader2, Mail, Globe, PhoneCall } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import partnerMarie1 from "@/assets/partner-marie-1.jpg";
 import partnerMarie2 from "@/assets/partner-marie-2.jpg";
 import partnerMarie3 from "@/assets/partner-marie-3.jpg";
 import localisationIcon from "@/assets/localisation-icon.svg";
-import callIcon from "@/assets/call.svg";
 import { useCreatePartnerContactRequest, usePartners } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -15,6 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 interface PartnerCard {
   id: string;
@@ -58,9 +61,14 @@ const filterTypeMap: Record<FilterCategory, string | undefined> = {
 
 const Partners = () => {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("all");
-  const [openedPartnerId, setOpenedPartnerId] = useState<string | null>(null);
   const [contactTarget, setContactTarget] = useState<PartnerCard | null>(null);
   const [isCreatingRequestFor, setIsCreatingRequestFor] = useState<string | null>(null);
+  const [formState, setFormState] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
   const { toast } = useToast();
 
   const partnerType = filterTypeMap[activeFilter];
@@ -94,52 +102,51 @@ const Partners = () => {
     });
   }, [apiPartners]);
 
-  const handleContact = async (partner: PartnerCard) => {
-    setIsCreatingRequestFor(partner.id);
+  const handleOpenContactForm = (partner: PartnerCard) => {
+    setContactTarget(partner);
+  };
+
+  const handleSubmitContact = async () => {
+    if (!contactTarget) return;
+    if (!formState.fullName.trim() || !formState.email.trim() || !formState.message.trim()) {
+      toast({
+        title: "Champs obligatoires",
+        description: "Nom, email et message sont requis.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsCreatingRequestFor(contactTarget.id);
     try {
       await createContactRequest.mutateAsync({
-        type: partner.backendType || "autre",
-        preferredPartnerId: partner.id,
-        description: `Demande de contact envoyee depuis /partenaires pour ${partner.name}`,
+        type: contactTarget.backendType || "autre",
+        preferredPartnerId: contactTarget.id,
+        description: formState.message,
+        metadata: {
+          contact: {
+            fullName: formState.fullName,
+            email: formState.email,
+            phone: formState.phone,
+          },
+          partnerName: contactTarget.name,
+          source: "client-dashboard",
+        },
       });
       toast({
-        title: "Demande enregistree",
-        description: "Votre demande a ete envoyee. Choisissez maintenant un canal de contact.",
+        title: "Demande envoyee",
+        description: "Votre demande a ete envoyee.",
       });
-      if (!partner.phone && !partner.email && !partner.website) {
-        toast({
-          title: "Contact indisponible",
-          description: "Ce partenaire n'a pas encore de canal de contact configure.",
-          variant: "destructive",
-        });
-        return;
-      }
-      setContactTarget(partner);
+      setContactTarget(null);
+      setFormState({ fullName: "", email: "", phone: "", message: "" });
     } catch (error: any) {
       toast({
         title: "Erreur",
         description: error?.message || "Impossible d'envoyer la demande de contact.",
         variant: "destructive",
       });
-      return;
     } finally {
       setIsCreatingRequestFor(null);
     }
-  };
-
-  const openContactChannel = (channel: "phone" | "email" | "website") => {
-    if (!contactTarget) return;
-    if (channel === "phone" && contactTarget.phone) {
-      window.open(`tel:${contactTarget.phone}`, "_self");
-    } else if (channel === "email" && contactTarget.email) {
-      window.open(
-        `mailto:${contactTarget.email}?subject=Demande%20de%20contact%20First%20Immo`,
-        "_self"
-      );
-    } else if (channel === "website" && contactTarget.website) {
-      window.open(contactTarget.website, "_blank", "noopener,noreferrer");
-    }
-    setContactTarget(null);
   };
 
   const filters: { key: FilterCategory; label: string; color: string; activeColor: string }[] = [
@@ -182,7 +189,6 @@ const Partners = () => {
             </div>
           ) : (
             partners.map((partner) => {
-              const isOpened = openedPartnerId === partner.id;
               return (
                 <div key={partner.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
@@ -205,48 +211,12 @@ const Partners = () => {
                           <img src={localisationIcon} alt="Localisation" className="h-4 w-4" />
                           <span className="text-sm">{partner.location}</span>
                         </div>
-                        {partner.phone && (
-                          <div className="flex items-center justify-center gap-1 text-slate-500 sm:justify-start">
-                            <img src={callIcon} alt="Telephone" className="h-4 w-4" />
-                            <span className="text-sm">{partner.phone}</span>
-                          </div>
-                        )}
                       </div>
-
-                      {isOpened && (
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                          <div className="flex flex-wrap items-center gap-3">
-                            {partner.email ? (
-                              <a href={`mailto:${partner.email}`} className="inline-flex items-center gap-1 text-sky-700 hover:underline">
-                                <Mail className="h-4 w-4" /> {partner.email}
-                              </a>
-                            ) : null}
-                            {partner.website ? (
-                              <a href={partner.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sky-700 hover:underline">
-                                <Globe className="h-4 w-4" /> Site web
-                              </a>
-                            ) : null}
-                            {partner.phone ? (
-                              <a href={`tel:${partner.phone}`} className="inline-flex items-center gap-1 text-sky-700 hover:underline">
-                                <PhoneCall className="h-4 w-4" /> Appeler
-                              </a>
-                            ) : null}
-                          </div>
-                          {partner.address ? <p className="mt-2 text-slate-600">Adresse: {partner.address}</p> : null}
-                        </div>
-                      )}
                     </div>
 
                     <div className="flex items-center justify-center gap-3 sm:self-center">
                       <button
-                        onClick={() => setOpenedPartnerId(isOpened ? null : partner.id)}
-                        className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                        title="Voir la fiche contact"
-                      >
-                        <MoreVertical size={20} />
-                      </button>
-                      <button
-                        onClick={() => handleContact(partner)}
+                        onClick={() => handleOpenContactForm(partner)}
                         disabled={isCreatingRequestFor === partner.id}
                         className="rounded-full bg-red-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
                       >
@@ -261,54 +231,62 @@ const Partners = () => {
         </div>
       </div>
 
-      <Dialog open={!!contactTarget} onOpenChange={(open) => !open && setContactTarget(null)}>
+      <Dialog
+        open={!!contactTarget}
+        onOpenChange={(open) => {
+          if (!open) setContactTarget(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Choisissez un canal de contact</DialogTitle>
+            <DialogTitle>Contacter le partenaire</DialogTitle>
             <DialogDescription>
-              Demande envoyee pour <strong>{contactTarget?.name}</strong>. Selectionnez le canal a utiliser.
+              Envoyez une demande a <strong>{contactTarget?.name}</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-3 pt-2">
-            {contactTarget?.phone ? (
-              <button
-                onClick={() => openContactChannel("phone")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:bg-slate-50"
-              >
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-900">
-                  <PhoneCall className="h-4 w-4 text-sky-600" />
-                  Appeler
-                </span>
-                <p className="mt-1 text-xs text-slate-500">{contactTarget.phone}</p>
-              </button>
-            ) : null}
-
-            {contactTarget?.email ? (
-              <button
-                onClick={() => openContactChannel("email")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:bg-slate-50"
-              >
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-900">
-                  <Mail className="h-4 w-4 text-sky-600" />
-                  Envoyer un email
-                </span>
-                <p className="mt-1 text-xs text-slate-500">{contactTarget.email}</p>
-              </button>
-            ) : null}
-
-            {contactTarget?.website ? (
-              <button
-                onClick={() => openContactChannel("website")}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:bg-slate-50"
-              >
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-900">
-                  <Globe className="h-4 w-4 text-sky-600" />
-                  Ouvrir le site
-                </span>
-                <p className="mt-1 text-xs text-slate-500 line-clamp-1">{contactTarget.website}</p>
-              </button>
-            ) : null}
+            <div className="grid gap-2">
+              <Label htmlFor="partner-full-name">Nom complet</Label>
+              <Input
+                id="partner-full-name"
+                value={formState.fullName}
+                onChange={(event) => setFormState((prev) => ({ ...prev, fullName: event.target.value }))}
+                placeholder="Votre nom"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="partner-email">Email</Label>
+              <Input
+                id="partner-email"
+                type="email"
+                value={formState.email}
+                onChange={(event) => setFormState((prev) => ({ ...prev, email: event.target.value }))}
+                placeholder="Votre email"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="partner-phone">Telephone (optionnel)</Label>
+              <Input
+                id="partner-phone"
+                value={formState.phone}
+                onChange={(event) => setFormState((prev) => ({ ...prev, phone: event.target.value }))}
+                placeholder="Votre telephone"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="partner-message">Message</Label>
+              <Textarea
+                id="partner-message"
+                value={formState.message}
+                onChange={(event) => setFormState((prev) => ({ ...prev, message: event.target.value }))}
+                placeholder="Decrivez votre besoin"
+                rows={4}
+              />
+            </div>
+            <Button onClick={handleSubmitContact} disabled={isCreatingRequestFor === contactTarget?.id}>
+              {isCreatingRequestFor === contactTarget?.id ? "Envoi..." : "Envoyer la demande"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

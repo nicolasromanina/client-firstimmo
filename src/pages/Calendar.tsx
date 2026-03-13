@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, isThisWeek, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { BookingWidget } from "@/components/booking/BookingWidget";
+import { GoogleCalendarConnect } from "@/components/calendar/GoogleCalendarConnect";
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +80,7 @@ export default function Calendar() {
   const queryClient = useQueryClient();
   const [bookingOpen, setBookingOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const { syncAppointment, isSyncingAppointment } = useGoogleCalendar();
 
   const { data, isLoading } = useQuery<{ appointments: Appointment[] }>({
     queryKey: ["client-appointments"],
@@ -124,6 +127,16 @@ export default function Calendar() {
           </Button>
         </div>
 
+        {/* Google Calendar Integration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Synchronisation Google Calendar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GoogleCalendarConnect />
+          </CardContent>
+        </Card>
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
@@ -164,16 +177,41 @@ export default function Calendar() {
                           )}
                           {appt.notes && <p className="text-xs text-slate-400 italic mt-1">{appt.notes}</p>}
                         </div>
-                        {appt.status !== "cancelled" && appt.status !== "completed" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={() => setCancelTarget(appt._id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {appt.status === "confirmed" && !(appt as any).googleCalendarEventId && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => {
+                                syncAppointment(appt._id);
+                                toast({ title: '📅 Synchronisation lancée' });
+                              }}
+                              disabled={isSyncingAppointment}
+                            >
+                              {isSyncingAppointment ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <CalendarIcon className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
+                          {(appt as any).googleCalendarEventId && (
+                            <div className="text-xs text-blue-600 font-medium flex items-center gap-1 px-2 py-1">
+                              ✓ Google
+                            </div>
+                          )}
+                          {appt.status !== "cancelled" && appt.status !== "completed" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              onClick={() => setCancelTarget(appt._id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

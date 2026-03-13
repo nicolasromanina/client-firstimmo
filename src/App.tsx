@@ -26,6 +26,7 @@ import Calendar from "./pages/Calendar";
 import Reviews from "./pages/Reviews";
 import Upgrade from "./pages/Upgrade";
 import Pricing from "./pages/Pricing";
+import Brochures from "./pages/Brochures";
 
 
 const queryClient = new QueryClient();
@@ -70,6 +71,9 @@ const App = () => (
           
           {/* Documents - Liste des documents */}
           <Route path="/documents" element={<Documents />} />
+
+          {/* Brochures - Brochures envoyees par promoteurs */}
+          <Route path="/brochures" element={<Brochures />} />
           
           {/* Premiums - Liste des partenaires */}
           <Route path="/partenaires" element={<Partners />} />

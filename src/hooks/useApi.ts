@@ -6,6 +6,7 @@ import {
   notificationService,
   partnerService,
   documentService,
+  brochureService,
   becomePromoteurService,
   alertService,
   appointmentService,
@@ -15,6 +16,7 @@ import {
   priceAnalyticsService,
   consultedProjectsService,
   onboardingService,
+  projectAccessService,
 } from '@/lib/services';
 import type { Alert } from '@/lib/types';
 
@@ -75,6 +77,15 @@ export const useConsultedProjects = (params?: { page?: number; limit?: number })
     queryKey: ['client', 'consulted-projects', params],
     queryFn: () => consultedProjectsService.getConsultedProjects(params),
     staleTime: 30_000,
+  });
+};
+
+// ===== Brochures =====
+export const useClientBrochures = () => {
+  return useQuery({
+    queryKey: ['client', 'brochures'],
+    queryFn: () => brochureService.getMyBrochures(),
+    staleTime: 60_000,
   });
 };
 
@@ -434,5 +445,41 @@ export const useOnboardingData = () => {
     queryKey: ['client', 'onboarding'],
     queryFn: onboardingService.getOnboardingData,
     staleTime: 60_000,
+  });
+};
+
+// ===== Project Access =====
+export const useRequestProjectAccess = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, message }: { projectId: string; message?: string }) =>
+      projectAccessService.requestAccess(projectId, message),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['project-access', variables.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project-access', 'my-requests'] });
+    },
+  });
+};
+
+export const useMyProjectAccess = (projectId: string) => {
+  return useQuery({
+    queryKey: ['project-access', projectId],
+    queryFn: () => projectAccessService.getMyAccess(projectId),
+    enabled: !!projectId,
+  });
+};
+
+export const useMyAccessRequests = () => {
+  return useQuery({
+    queryKey: ['project-access', 'my-requests'],
+    queryFn: projectAccessService.getMyRequests,
+  });
+};
+
+export const useProjectTimeline = (projectId: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['project-timeline', projectId],
+    queryFn: () => projectAccessService.getProjectTimeline(projectId),
+    enabled: enabled && !!projectId,
   });
 };
