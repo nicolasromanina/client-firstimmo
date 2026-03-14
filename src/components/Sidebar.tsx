@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
-import { LayoutGrid, Bell, BarChart3, MessageCircle, CalendarDays, Star } from "lucide-react";
+import { LayoutGrid, Bell, BarChart3, MessageCircle, CalendarDays, Star, FileText } from "lucide-react";
 import userIcon from "@/assets/user-icon.svg";
 import projectIcon from "@/assets/project-icon.svg";
 import documentIcon from "@/assets/document-icon.svg";
@@ -60,6 +60,7 @@ const Sidebar = () => {
     { icon: <CalendarDays className="w-5 h-5" />, label: "Rendez-vous", to: "/rendez-vous" },
     { icon: <Star className="w-5 h-5" />, label: "Mes avis", to: "/avis" },
     { icon: <Bell className="w-5 h-5" />, label: "Alertes", to: "/alertes" },
+    { icon: <FileText className="w-5 h-5" />, label: "Brochures", to: "/brochures" },
     { icon: <img src={documentIcon} alt="Documents" className="w-5 h-5" />, label: "Documents", to: "/documents" },
     { icon: <img src={partnerIcon} alt="Partenaires" className="w-5 h-5" />, label: "Partenaires", to: "/partenaires" },
   ];
